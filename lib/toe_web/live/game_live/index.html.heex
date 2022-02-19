@@ -1,0 +1,32 @@
+<div class="text-center">
+    <%= @game.player1.name %>
+    <%= @game.player2.name %>
+    <%= @game.player1.points %>
+    <%= @game.player2.points %>
+
+
+
+
+    <p><%= if @game.player_turn == 1, do: @game.player1.name, else: @game.player2.name %>'s Turn</p>
+
+    <%# Board %>
+
+    <div class="m-5">
+        <%= for {square, i} <- Enum.with_index(@game.board) do %>
+        <%= if rem(i, 3) == 0 do %>
+        <br>
+        <% end %>
+
+        <button phx-value-name={square.name} phx-click="select" class="hover:bg-gray-100 w-12 h-12 border-1 border p-5">
+            <%= square.letter %>
+
+            <%= if square.selected, do: "*" %>
+        </button>
+        <% end %>
+    </div>
+
+    <%= for log <- @game.status_log do %>
+    <p><%= log %></p>
+    <% end %>
+
+</div>
