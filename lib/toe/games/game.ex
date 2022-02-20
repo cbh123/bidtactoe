@@ -6,11 +6,11 @@ defmodule Toe.Games.Game do
 
   # :not_started | :playing | :done
   defstruct slug: nil,
-            status: :bidding,
-            player1: %Player{name: "Jeff", letter: "X"},
-            player2: %Player{name: "Bob", letter: "O"},
+            status: :selecting,
+            players: [],
             player_turn: 1,
             status_log: [],
+            winning_squares: [],
             board: [
               # Row 1
               Square.build(:sq11),

@@ -1,29 +1,49 @@
 <div class="text-center">
-    <%= @game.player1.name %>
-    <%= @game.player2.name %>
-    <%= @game.player1.points %>
-    <%= @game.player2.points %>
+    <h5>you are <%= @me.name %></h5>
 
+    <%= for {player, i} <- Enum.with_index(@game.players) do %>
+    <span class={if @game.player_turn==i+1, do: "underline" }>
+        <%= player.name %></span>
+    <span><%= player.letter %></span>
+    <%= player.points %>
 
+    <% end %>
 
-
-    <p><%= if @game.player_turn == 1, do: @game.player1.name, else: @game.player2.name %>'s Turn</p>
+    <p><%= @game.status %></p>
 
     <%# Board %>
-
     <div class="m-5">
         <%= for {square, i} <- Enum.with_index(@game.board) do %>
         <%= if rem(i, 3) == 0 do %>
         <br>
         <% end %>
 
-        <button phx-value-name={square.name} phx-click="select" class="hover:bg-gray-100 w-12 h-12 border-1 border p-5">
+        <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
+            do: "bg-blue-500" } hover:bg-gray-100 w-12 h-12 border-1 border p-5"}>
             <%= square.letter %>
 
             <%= if square.selected, do: "*" %>
         </button>
         <% end %>
     </div>
+
+
+    <%# Bidding Area %>
+    <%= if @game.status == :bidding do %>
+    <%= unless Games.has_bid_already?(@game, @me) do %>
+    <div>
+
+        <.form let={f} for={:bid} phx-change="validate" phx-submit="submit-bid">
+            <%= label f, :bid %>
+            <%= number_input f, :bid, required: true %>
+            <%= error_tag f, :bid %>
+
+            <%= submit "Submit Bid" %>
+        </.form>
+
+    </div>
+    <% end %>
+    <% end %>
 
     <%= for log <- @game.status_log do %>
     <p><%= log %></p>
