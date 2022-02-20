@@ -19,7 +19,8 @@
         <% end %>
 
         <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
-            do: "bg-blue-500" } hover:bg-gray-100 w-12 h-12 border-1 border p-5"}>
+            do: "bg-blue-500" } #{if square.selected, do: "bg-yellow-500 animate-pulse" } hover:bg-gray-100 w-12 h-12
+            border-1 border p-5"}>
             <%= square.letter %>
 
             <%= if square.selected, do: "*" %>

@@ -47,18 +47,26 @@ defmodule ToeWeb.GameLive.Index do
         {:noreply, socket |> put_flash(:error, "You've already bid!")}
 
       true ->
+        bid = String.to_integer(bid)
         Games.submit_bid(socket.assigns.game, socket.assigns.me, bid)
         {:noreply, socket |> assign(bid: 0)}
     end
   end
 
-  def handle_event("validate", _params, socket) do
-    # TODO: add validation to make sure bid is fine.
+  def handle_event("validate", %{"bid" => %{"bid" => ""}}, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("validate", %{"bid" => %{"bid" => bid}}, socket) when bid != "" do
+    if String.to_integer(bid) > socket.assigns.me.points do
+      {:noreply, socket |> put_flash(:error, "You don't have enough points!")}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
   def handle_info({:game_updated, game}, socket) do
-    {:noreply, assign(socket, :game, game)}
+    {:noreply, assign(socket, :game, game) |> clear_flash()}
   end
 end

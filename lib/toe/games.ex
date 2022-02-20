@@ -37,17 +37,29 @@ defmodule Toe.Games do
     |> save_game(%{board: board, status: :bidding})
   end
 
-  def submit_bid(%Game{players: players} = game, player, bid) do
+  @doc """
+  Submits bid when you don't have enough points. Bid is an int here.
+  """
+  def submit_bid(%Game{players: players} = game, %Player{points: points, name: _name}, bid)
+      when points < bid do
+    game
+  end
+
+  @doc """
+  Submits bid when you don't have enough points. Bid is an int here.
+  """
+  def submit_bid(%Game{players: players} = game, %Player{points: points, name: name}, bid)
+      when points >= bid do
     players =
       Enum.map(players, fn p ->
-        if p.name == player.name,
-          do: %{p | bid: String.to_integer(bid)},
+        if p.name == name,
+          do: %{p | bid: bid},
           else: p
       end)
 
     game
     |> Map.merge(%{players: players})
-    |> update_status_log("#{player.name} bid: #{bid}")
+    |> update_status_log("#{name} bid: #{bid}")
     |> check_bid_outcome()
     |> save_game()
   end
