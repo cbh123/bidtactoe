@@ -2,7 +2,7 @@
     <h5>you are <%= @me.name %></h5>
 
     <%= for {player, i} <- Enum.with_index(@game.players) do %>
-    <span class={if @game.player_turn==i+1, do: "underline" }>
+    <span class={if @game.player_turn==i, do: "underline" }>
         <%= player.name %></span>
     <span><%= player.letter %></span>
     <%= player.points %>

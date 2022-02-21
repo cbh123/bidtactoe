@@ -18,13 +18,15 @@ defmodule ToeWeb.GameLive.Index do
   end
 
   @impl true
-  def handle_params(%{"current_player" => me}, _url, socket) do
-    me = Enum.find(socket.assigns.game.players, fn p -> p.name == me end)
-    {:noreply, socket |> assign(me: me)}
+  def handle_params(%{"current_player" => username}, _url, socket) do
+    me = Enum.find(socket.assigns.game.players, fn p -> p.name == username end)
+    {:noreply, socket |> assign(me: me, username: username)}
   end
 
   @impl true
   def handle_event("select", %{"name" => name}, socket) do
+    square = Enum.find(socket.assigns.game.board, fn s -> s.name == String.to_atom(name) end)
+
     cond do
       socket.assigns.game.status == :done ->
         {:noreply, socket |> put_flash(:info, "The game is over!")}
@@ -35,21 +37,22 @@ defmodule ToeWeb.GameLive.Index do
       Games.current_player_turn(socket.assigns.game).name != socket.assigns.me.name ->
         {:noreply, socket |> put_flash(:error, "It's not your turn to select!")}
 
+      not Games.can_square_be_selected?(square) ->
+        {:noreply, socket |> put_flash(:error, "That square already has been won!")}
+
       socket.assigns.game.status == :selecting ->
-        Games.declare_selected_square(socket.assigns.game, String.to_atom(name))
+        Games.declare_selected_square(socket.assigns.game, square)
         {:noreply, socket}
     end
   end
 
   def handle_event("submit-bid", %{"bid" => %{"bid" => bid}}, socket) do
-    cond do
-      Games.has_bid_already?(socket.assigns.game, socket.assigns.me) ->
-        {:noreply, socket |> put_flash(:error, "You've already bid!")}
-
-      true ->
-        bid = String.to_integer(bid)
-        Games.submit_bid(socket.assigns.game, socket.assigns.me, bid)
-        {:noreply, socket |> assign(bid: 0)}
+    if Games.has_bid_already?(socket.assigns.game, socket.assigns.me) do
+      {:noreply, socket |> put_flash(:error, "You've already bid!")}
+    else
+      bid = String.to_integer(bid)
+      Games.submit_bid(socket.assigns.game, socket.assigns.me, bid)
+      {:noreply, socket |> assign(bid: 0)}
     end
   end
 
@@ -67,6 +70,7 @@ defmodule ToeWeb.GameLive.Index do
 
   @impl true
   def handle_info({:game_updated, game}, socket) do
-    {:noreply, assign(socket, :game, game) |> clear_flash()}
+    me = Enum.find(game.players, fn p -> p.name == socket.assigns.username end)
+    {:noreply, assign(socket, game: game, me: me) |> clear_flash()}
   end
 end

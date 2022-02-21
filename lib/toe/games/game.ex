@@ -4,11 +4,11 @@ defmodule Toe.Games.Game do
   alias Toe.Games.Player
   alias Toe.Games.Square
 
-  # :not_started | :playing | :done
   defstruct slug: nil,
             status: :selecting,
             players: [],
-            player_turn: 1,
+            # zero-indexed
+            player_turn: 0,
             status_log: [],
             winning_squares: [],
             board: [

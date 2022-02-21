@@ -22,34 +22,32 @@ defmodule Toe.Games do
   """
   def declare_selected_square(
         %Game{board: board, status: :selecting} = game,
-        selected_square
+        %Square{name: name}
       ) do
     board =
       Enum.map(board, fn sq ->
-        if sq.name == selected_square and can_square_be_selected?(sq),
+        if sq.name == name and can_square_be_selected?(sq),
           do: %{sq | selected: true},
           else: sq
       end)
 
     game
-    |> update_status_log("#{who_declared_status?(game).name} selected: #{selected_square}")
-    |> next_turn()
+    |> update_status_log("#{Enum.at(game.players, game.player_turn).name} selected: #{name}")
     |> save_game(%{board: board, status: :bidding})
   end
 
   @doc """
-  Submits bid when you don't have enough points. Bid is an int here.
+  Submits bid when you don't have enough points, which returns game as it is.
   """
-  def submit_bid(%Game{players: players} = game, %Player{points: points, name: _name}, bid)
-      when points < bid do
-    game
-  end
+  def submit_bid(%Game{} = game, %Player{points: points}, bid)
+      when points < bid and is_number(bid),
+      do: game
 
   @doc """
-  Submits bid when you don't have enough points. Bid is an int here.
+  Submits bid when you DO have enough points. Bid is an int here.
   """
   def submit_bid(%Game{players: players} = game, %Player{points: points, name: name}, bid)
-      when points >= bid do
+      when points >= bid and is_number(bid) do
     players =
       Enum.map(players, fn p ->
         if p.name == name,
@@ -65,17 +63,13 @@ defmodule Toe.Games do
   end
 
   defp check_bid_outcome(%Game{} = game) do
-    if all_players_bid?(game) do
-      bid_outcome(game)
-    else
-      game
-    end
+    if all_players_bid?(game), do: bid_outcome(game), else: game
   end
 
   defp bid_outcome(%Game{} = game) do
     """
-    # if there's a tie, reset bids to zero, status stays at bidding
-    # if someone won the bid:
+    if there's a tie, reset bids to zero, status stays at bidding
+    if someone won the bid:
     - change the board to their letter
     - subtract both the bids from the players
     - check if there's a winner
@@ -91,16 +85,17 @@ defmodule Toe.Games do
       |> update_status_log("Bids are tied, bid again")
     else
       max_bid = Enum.max(Enum.map(game.players, fn p -> p.bid end))
-      winner = Enum.find(game.players, fn p -> p.bid == max_bid end)
+      bid_winner = Enum.find(game.players, fn p -> p.bid == max_bid end)
 
       game
       |> subtract_bids()
       |> set_all_bids_to_nil()
       |> set_selections_to_nil()
       |> set_status(:selecting)
-      |> set_square_letter(get_selected_square(game), winner.letter)
-      |> update_status_log("#{winner.name} wins the bid with #{max_bid}")
-      |> check_for_win(winner)
+      |> set_square_letter(get_selected_square(game), bid_winner.letter)
+      |> update_status_log("#{bid_winner.name} wins the bid with #{max_bid}")
+      |> check_for_win(bid_winner)
+      |> next_turn()
     end
   end
 
@@ -151,6 +146,10 @@ defmodule Toe.Games do
     Map.merge(game, %{players: players})
   end
 
+  defp all_squares_taken?(board) do
+    Enum.all?(board, fn sq -> sq.letter end)
+  end
+
   @doc """
   Checks if a player has bid already in this bidding round.
   """
@@ -158,23 +157,24 @@ defmodule Toe.Games do
     Enum.find(players, fn p -> p.name == player.name and p.bid end) != nil
   end
 
+  @doc """
+  Get the player whose turn it is.
+  """
   def current_player_turn(%Game{player_turn: player_turn, players: players}) do
-    Enum.at(players, player_turn - 1) |> IO.inspect(label: "turn?")
+    Enum.at(players, player_turn)
   end
 
   defp next_player_turn(%Game{player_turn: player_turn, players: players}) do
-    if player_turn + 1 > length(players), do: 1, else: player_turn + 1
+    if player_turn >= length(players) - 1, do: 0, else: player_turn + 1
   end
 
-  defp can_square_be_selected?(%Square{selected: false}), do: true
-  defp can_square_be_selected?(%Square{selected: true}), do: false
-
-  defp who_declared_status?(%Game{
-         player_turn: player_turn,
-         players: players
-       }) do
-    Enum.at(players, player_turn - 1)
-  end
+  @doc """
+  Lets us know whether a square can be selected for bidding.
+  Square can't be selected if it's already selected, or if there's already a letter on it.
+  """
+  def can_square_be_selected?(%Square{selected: false, letter: nil}), do: true
+  def can_square_be_selected?(%Square{selected: false, letter: _letter}), do: false
+  def can_square_be_selected?(%Square{selected: true}), do: false
 
   @doc """
   Updates the status log with a new status.
@@ -186,24 +186,8 @@ defmodule Toe.Games do
   end
 
   def save_game(%Game{} = game, attrs \\ %{}) do
-    game =
-      game
-      |> Map.merge(attrs)
-
+    game = Map.merge(game, attrs)
     broadcast({:ok, game}, :game_updated, game.slug)
-  end
-
-  @doc """
-  Returns the list of game.
-
-  ## Examples
-
-      iex> list_game()
-      [%Game{}, ...]
-
-  """
-  def list_game do
-    Repo.all(Game)
   end
 
   @doc """
@@ -302,6 +286,11 @@ defmodule Toe.Games do
     case _check_for_win(game, player) do
       :not_found ->
         game
+
+      :tie ->
+        game
+        |> set_status(:done)
+        |> update_status_log("TIE GAME!")
 
       [sq1, sq2, sq3] ->
         game
@@ -408,7 +397,7 @@ defmodule Toe.Games do
         [:sq13, :sq22, :sq31]
 
       _ ->
-        :not_found
+        if all_squares_taken?(board), do: :tie, else: :not_found
     end
   end
 end
