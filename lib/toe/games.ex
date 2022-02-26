@@ -10,6 +10,9 @@ defmodule Toe.Games do
   alias Toe.Games.Square
   alias Toe.Games.Player
 
+  def game_over?(%Game{status: "done"}), do: true
+  def game_over?(%Game{status: _}), do: false
+
   @doc """
   Declares that a selected_square in the game is "selected",
   meaning that it's up for bidding.
@@ -21,7 +24,7 @@ defmodule Toe.Games do
   Then returns the %Game{} struct.
   """
   def declare_selected_square(
-        %Game{board: board, status: :selecting} = game,
+        %Game{board: board, status: "selecting"} = game,
         %Square{name: name}
       ) do
     board =
@@ -33,7 +36,7 @@ defmodule Toe.Games do
 
     game
     |> update_status_log("#{Enum.at(game.players, game.player_turn).name} selected: #{name}")
-    |> save_game(%{board: board, status: :bidding})
+    |> update_game(%{board: board, status: "bidding"})
   end
 
   @doc """
@@ -55,11 +58,12 @@ defmodule Toe.Games do
           else: p
       end)
 
-    game
-    |> Map.merge(%{players: players})
-    |> update_status_log("#{name} bid: #{bid}")
-    |> check_bid_outcome()
-    |> save_game()
+    {:ok, game} =
+      game
+      |> update_status_log("#{name} bid: #{bid}")
+      |> update_game(%{players: players})
+
+    check_bid_outcome(game)
   end
 
   defp check_bid_outcome(%Game{} = game) do
@@ -86,13 +90,14 @@ defmodule Toe.Games do
     else
       max_bid = Enum.max(Enum.map(game.players, fn p -> p.bid end))
       bid_winner = Enum.find(game.players, fn p -> p.bid == max_bid end)
+      selected_square = get_selected_square(game)
 
       game
       |> subtract_bids()
       |> set_all_bids_to_nil()
       |> set_selections_to_nil()
-      |> set_status(:selecting)
-      |> set_square_letter(get_selected_square(game), bid_winner.letter)
+      |> set_status("selecting")
+      |> set_square_letter(selected_square, bid_winner.letter)
       |> update_status_log("#{bid_winner.name} wins the bid with #{max_bid}")
       |> check_for_win(bid_winner)
       |> next_turn()
@@ -106,20 +111,24 @@ defmodule Toe.Games do
 
   defp set_all_bids_to_nil(%Game{players: players} = game) do
     players = Enum.map(players, fn p -> %{p | bid: nil} end)
-    Map.merge(game, %{players: players})
+    {:ok, game} = update_game(game, %{players: players})
+    game
   end
 
   defp set_selections_to_nil(%Game{board: board} = game) do
     board = Enum.map(board, fn sq -> %{sq | selected: false} end)
-    Map.merge(game, %{board: board})
+    {:ok, game} = update_game(game, %{board: board})
+    game
   end
 
   defp next_turn(%Game{} = game) do
-    Map.merge(game, %{player_turn: next_player_turn(game)})
+    update_game(game, %{player_turn: next_player_turn(game)})
   end
 
-  defp set_status(%Game{} = game, status) when status in [:selecting, :bidding, :done] do
-    Map.merge(game, %{status: status})
+  defp set_status(%Game{} = game, status)
+       when status in ["selecting", "bidding", "done"] do
+    {:ok, game} = update_game(game, %{status: status})
+    game
   end
 
   defp set_square_letter(%Game{board: board} = game, %Square{name: name}, letter) do
@@ -130,7 +139,14 @@ defmodule Toe.Games do
           else: sq
       end)
 
-    Map.merge(game, %{board: board})
+    {:ok, game} = update_game(game, %{board: board})
+    game
+  end
+
+  defp subtract_bids(%Game{players: players} = game) do
+    players = Enum.map(players, fn p -> %{p | points: p.points - p.bid} end)
+    {:ok, game} = update_game(game, %{players: players})
+    game
   end
 
   defp get_selected_square(%Game{board: board}) do
@@ -139,11 +155,6 @@ defmodule Toe.Games do
 
   defp all_players_bid?(%Game{players: players}) do
     Enum.all?(players, fn p -> p.bid end)
-  end
-
-  defp subtract_bids(%Game{players: players} = game) do
-    players = Enum.map(players, fn p -> %{p | points: p.points - p.bid} end)
-    Map.merge(game, %{players: players})
   end
 
   defp all_squares_taken?(board) do
@@ -182,12 +193,20 @@ defmodule Toe.Games do
   Returns a game.
   """
   def update_status_log(%Game{status_log: status_log} = game, new_status) do
-    Map.merge(game, %{status_log: status_log ++ [new_status]})
+    {:ok, game} = update_game(game, %{status_log: status_log ++ [new_status]})
+    game
   end
 
-  def save_game(%Game{} = game, attrs \\ %{}) do
-    game = Map.merge(game, attrs)
-    broadcast({:ok, game}, :game_updated, game.slug)
+  def update_game(%Game{} = game, attrs \\ %{}) do
+    game
+    |> Game.changeset(attrs)
+    |> Repo.update()
+    |> broadcast(:game_updated, game.slug)
+  end
+
+  def delete_game(%Game{} = game) do
+    Repo.delete(game)
+    |> broadcast(:game_restarted, game.slug)
   end
 
   @doc """
@@ -206,8 +225,21 @@ defmodule Toe.Games do
   """
   def get_game!(id), do: Repo.get!(Game, id)
 
+  defp get_game_by_slug(slug) do
+    Repo.get_by(Game, slug: slug)
+    |> convert_json_to_game()
+  end
+
+  defp convert_json_to_game(nil), do: nil
+
+  defp convert_json_to_game(game) do
+    game
+    |> Map.merge(%{board: game.board |> Enum.map(fn b -> Square.convert(b) end)})
+    |> Map.merge(%{players: game.players |> Enum.map(fn p -> Player.convert(p) end)})
+  end
+
   @doc """
-  Creates a game.
+  Creates or updates game.
 
   ## Examples
 
@@ -218,28 +250,41 @@ defmodule Toe.Games do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_game(attrs \\ %{}) do
-    %Game{}
-    |> Game.changeset(attrs)
-    |> Repo.insert()
+  def create_game(slug, players) do
+    case get_game_by_slug(slug) do
+      nil ->
+        %Game{
+          slug: slug,
+          status: "selecting",
+          players: players,
+          player_turn: 0,
+          status_log: [],
+          winning_squares: [],
+          board: create_board()
+        }
+        |> Repo.insert()
+        |> broadcast(:game_updated, slug)
+
+      game ->
+        {:ok, game}
+    end
   end
 
-  @doc """
-  Updates a game.
-
-  ## Examples
-
-      iex> update_game(game, %{field: new_value})
-      {:ok, %Game{}}
-
-      iex> update_game(game, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_game(%Game{} = game, attrs) do
-    game
-    |> Game.changeset(attrs)
-    |> Repo.update()
+  defp create_board(_x \\ 3) do
+    [
+      # Row 1
+      Square.build(:sq11),
+      Square.build(:sq12),
+      Square.build(:sq13),
+      # Row 2
+      Square.build(:sq21),
+      Square.build(:sq22),
+      Square.build(:sq23),
+      # Row 3
+      Square.build(:sq31),
+      Square.build(:sq32),
+      Square.build(:sq33)
+    ]
   end
 
   @doc """
@@ -289,14 +334,14 @@ defmodule Toe.Games do
 
       :tie ->
         game
-        |> set_status(:done)
+        |> set_status("done")
         |> update_status_log("TIE GAME!")
 
       [sq1, sq2, sq3] ->
         game
-        |> Map.merge(%{winning_squares: [sq1, sq2, sq3]})
-        |> set_status(:done)
+        |> set_status("done")
         |> update_status_log("#{player.name} won the game!")
+        |> update_game(%{winning_squares: [sq1, sq2, sq3]})
     end
   end
 

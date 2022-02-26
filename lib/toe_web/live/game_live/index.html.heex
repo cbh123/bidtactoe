@@ -1,5 +1,6 @@
 <div class="text-center">
-    <h5>you are <%= @me.name %></h5>
+    <h5><%= if is_nil(@me), do: "SPECTATING", else:  "you are #{@me.name}" %> </h5>
+
 
     <%= for {player, i} <- Enum.with_index(@game.players) do %>
     <span class={if @game.player_turn==i, do: "underline" }>
@@ -30,7 +31,7 @@
 
 
     <%# Bidding Area %>
-    <%= if @game.status == :bidding do %>
+    <%= if @game.status == "bidding" do %>
     <%= unless Games.has_bid_already?(@game, @me) do %>
     <div>
 
@@ -49,5 +50,7 @@
     <%= for log <- @game.status_log do %>
     <p><%= log %></p>
     <% end %>
+
+    <button phx-click="restart">Restart</button>
 
 </div>

@@ -2,6 +2,7 @@ defmodule Toe.Games.Square do
   # this just means we can reference Square as a module (https://dockyard.com/blog/2017/08/15/elixir-tips)
   alias __MODULE__
 
+  @derive Jason.Encoder
   defstruct [:name, :letter, selected: false]
 
   @doc """
@@ -10,6 +11,13 @@ defmodule Toe.Games.Square do
   """
   def build(name, letter \\ nil) do
     %Square{name: name, letter: letter, selected: false}
+  end
+
+  @doc """
+  Converts from JSON to Square.
+  """
+  def convert(%{"letter" => letter, "name" => name, "selected" => selected}) do
+    %Square{name: name, letter: letter, selected: selected}
   end
 
   @doc """
