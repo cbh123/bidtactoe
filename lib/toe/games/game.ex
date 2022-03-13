@@ -4,7 +4,7 @@ defmodule Toe.Games.Game do
 
   @derive Jason.Encoder
   schema "game" do
-    field :slug, :string
+    belongs_to :room, Toe.Games.Room, references: :slug, foreign_key: :slug, type: :string
     field :status, :string
     field :players, {:array, :map}
     field :player_turn, :integer
@@ -28,5 +28,6 @@ defmodule Toe.Games.Game do
       :status,
       :board
     ])
+    |> unique_constraint(:slug)
   end
 end

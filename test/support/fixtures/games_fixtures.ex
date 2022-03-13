@@ -25,4 +25,18 @@ defmodule Toe.GamesFixtures do
 
     game
   end
+
+  @doc """
+  Generate a room.
+  """
+  def room_fixture(attrs \\ %{}) do
+    {:ok, room} =
+      attrs
+      |> Enum.into(%{
+        slug: "some slug"
+      })
+      |> Toe.Games.create_room()
+
+    room
+  end
 end

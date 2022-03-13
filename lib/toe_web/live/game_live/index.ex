@@ -1,26 +1,71 @@
 defmodule ToeWeb.GameLive.Index do
   use ToeWeb, :live_view
-
+  alias ToeWeb.Presence
+  alias Phoenix.Socket.Broadcast
   alias Toe.Games
   alias Toe.Games.Game
   alias Toe.Games.Player
 
   @impl true
-  def mount(%{"slug" => slug}, _session, socket) do
+  def mount(%{"slug" => slug}, session, socket) do
+    slug = String.downcase(slug)
+
     if connected?(socket) do
       Games.subscribe(slug)
     end
 
-    players = [%Player{name: "jeff", letter: "X"}, %Player{name: "bob", letter: "O"}]
+    {:ok, _} = Presence.track(self(), "room:" <> slug, session["username"], %{})
 
-    {:ok, game} = Games.create_game(slug, players)
-    {:ok, assign(socket, game: game, bid: 0)}
+    # if game already has started, we should load it
+
+    {:ok,
+     socket
+     |> assign(username: session["username"])
+     |> assign(connected_users: %{})
+     |> assign(game: nil)
+     |> assign(bid: 0)
+     |> assign(slug: slug)
+     |> assign(game: Games.get_game_by_slug(slug))}
+  end
+
+  defp start_game(slug, connected_users) do
+    players =
+      connected_users
+      |> filter_connected_users()
+      |> create_player_list()
+
+    slug
+    |> Games.create_or_get_room_slug()
+    |> Games.create_game(players)
+  end
+
+  defp create_player_list(player_names) when is_list(player_names) do
+    flags = ["X", "O"]
+
+    player_names
+    |> Enum.with_index()
+    |> Enum.map(fn {name, i} ->
+      %Player{name: name, letter: Enum.at(flags, rem(i, 2))}
+    end)
+  end
+
+  def handle_event("start", _, socket) do
+    {:ok, game} = start_game(socket.assigns.slug, socket.assigns.connected_users)
+    {:noreply, socket |> assign(game: game)}
+  end
+
+  def handle_event("save", %{"username" => username}, socket) do
+    Presence.track(self(), "room:" <> socket.assigns.slug, username, %{})
+
+    {:noreply,
+     socket
+     |> push_event("set-username", %{username: username})
+     |> assign(username: username)}
   end
 
   @impl true
-  def handle_params(%{"current_player" => username}, _url, socket) do
-    me = find_me(socket.assigns.game, username)
-    {:noreply, socket |> assign(me: me, username: username)}
+  def handle_event("updated_session_data", %{"username" => username}, socket) do
+    {:noreply, assign(socket, username: username)}
   end
 
   @impl true
@@ -34,10 +79,10 @@ defmodule ToeWeb.GameLive.Index do
       socket.assigns.game.status != "selecting" ->
         {:noreply, socket |> put_flash(:error, "We're in bidding phase, select a square after!")}
 
-      is_nil(socket.assigns.me) ->
+      find_me(socket.assigns.game, socket.assigns.username) |> is_nil() ->
         {:noreply, socket |> put_flash(:info, "Spectators can't play! You fool.")}
 
-      Games.current_player_turn(socket.assigns.game).name != socket.assigns.me.name ->
+      Games.current_player_turn(socket.assigns.game).name != socket.assigns.username ->
         {:noreply, socket |> put_flash(:error, "It's not your turn to select!")}
 
       not Games.can_square_be_selected?(square) ->
@@ -50,12 +95,15 @@ defmodule ToeWeb.GameLive.Index do
   end
 
   def handle_event("submit-bid", %{"bid" => %{"bid" => bid}}, socket) do
-    if Games.has_bid_already?(socket.assigns.game, socket.assigns.me) do
-      {:noreply, socket |> put_flash(:error, "You've already bid!")}
-    else
-      bid = String.to_integer(bid)
-      Games.submit_bid(socket.assigns.game, socket.assigns.me, bid)
-      {:noreply, socket |> assign(bid: 0)}
+    player = find_me(socket.assigns.game, socket.assigns.username)
+    bid = String.to_integer(bid)
+
+    case Games.submit_bid(socket.assigns.game, player, bid) do
+      {:error, message} ->
+        {:noreply, socket |> put_flash(:error, message)}
+
+      {:ok, _game} ->
+        {:noreply, socket |> assign(bid: 0)}
     end
   end
 
@@ -64,7 +112,9 @@ defmodule ToeWeb.GameLive.Index do
   end
 
   def handle_event("validate", %{"bid" => %{"bid" => bid}}, socket) when bid != "" do
-    if String.to_integer(bid) > socket.assigns.me.points do
+    player = find_me(socket.assigns.game, socket.assigns.username)
+
+    if String.to_integer(bid) > player do
       {:noreply, socket |> put_flash(:error, "You don't have enough points!")}
     else
       {:noreply, socket}
@@ -76,19 +126,35 @@ defmodule ToeWeb.GameLive.Index do
     {:noreply, socket}
   end
 
-  @impl true
-  def handle_info({:game_updated, game}, socket) do
-    me = find_me(game, socket.assigns.username)
-    {:noreply, assign(socket, game: game, me: me) |> clear_flash()}
+  def handle_info(%Broadcast{event: "presence_diff"}, %{assigns: %{slug: slug}} = socket) do
+    {:noreply,
+     socket
+     |> assign(:connected_users, Presence.list("room:" <> slug))}
   end
 
   @impl true
-  def handle_info({:game_restarted, game}, socket) do
-    {:ok, game} = Games.create_game("hi", socket.assigns.game.players)
+  def handle_info({:game_started, game}, socket) do
     {:noreply, assign(socket, game: game) |> clear_flash()}
   end
 
-  defp find_me(%Game{players: players}, name) do
+  @impl true
+  def handle_info({:game_updated, game}, socket) do
+    {:noreply, assign(socket, game: game) |> clear_flash()}
+  end
+
+  @impl true
+  def handle_info({:game_restarted, _game}, socket) do
+    game = Games.get_game_by_slug(socket.assigns.slug)
+    {:noreply, socket |> assign(game: game) |> clear_flash()}
+  end
+
+  def find_me(%Game{players: players}, name) do
     Enum.find(players, fn p -> p.name == name end)
+  end
+
+  defp filter_connected_users(connected_users) do
+    connected_users
+    |> Map.keys()
+    |> Enum.filter(fn username -> username != "" and not is_nil(username) end)
   end
 end

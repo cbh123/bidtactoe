@@ -7,7 +7,8 @@ defmodule ToeWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_toe_key",
-    signing_salt: "riqHUgP2"
+    signing_salt: "riqHUgP2",
+    max_age: 999_999_999
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]

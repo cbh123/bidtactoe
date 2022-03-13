@@ -6,9 +6,7 @@ defmodule Toe.Games do
   import Ecto.Query, warn: false
   alias Toe.Repo
 
-  alias Toe.Games.Game
-  alias Toe.Games.Square
-  alias Toe.Games.Player
+  alias Toe.Games.{Game, Square, Player, Room}
 
   def game_over?(%Game{status: "done"}), do: true
   def game_over?(%Game{status: _}), do: false
@@ -40,30 +38,49 @@ defmodule Toe.Games do
   end
 
   @doc """
-  Submits bid when you don't have enough points, which returns game as it is.
+  Submits bid when you don't have enough points, which returns error with message.
+
+  Returns {:error, message}
   """
   def submit_bid(%Game{} = game, %Player{points: points}, bid)
       when points < bid and is_number(bid),
-      do: game
+      do: {:error, "You don't have enough points!"}
+
+  @doc """
+  Submit negative bid, which returns error with message.
+
+  Returns {:error, message}
+  """
+  def submit_bid(%Game{} = game, %Player{points: points}, bid)
+      when is_number(bid) and bid < 0,
+      do: {:error, "You can't submit a negative bid!"}
 
   @doc """
   Submits bid when you DO have enough points. Bid is an int here.
+
+  Returns {:ok, game} if valid, {:error, message} otherwise.
   """
   def submit_bid(%Game{players: players} = game, %Player{points: points, name: name}, bid)
       when points >= bid and is_number(bid) do
-    players =
-      Enum.map(players, fn p ->
-        if p.name == name,
-          do: %{p | bid: bid},
-          else: p
-      end)
+    case has_bid_already?(game, name) do
+      true ->
+        {:error, "You've already bid!"}
 
-    {:ok, game} =
-      game
-      |> update_status_log("#{name} bid: #{bid}")
-      |> update_game(%{players: players})
+      _ ->
+        # update players
+        players =
+          Enum.map(players, fn p ->
+            if p.name == name,
+              do: %{p | bid: bid},
+              else: p
+          end)
 
-    check_bid_outcome(game)
+        game
+        |> update_status_log("#{name} bid: #{bid}")
+        |> update_game(%{players: players})
+
+        {:ok, check_bid_outcome(game)}
+    end
   end
 
   defp check_bid_outcome(%Game{} = game) do
@@ -164,8 +181,8 @@ defmodule Toe.Games do
   @doc """
   Checks if a player has bid already in this bidding round.
   """
-  def has_bid_already?(%Game{players: players}, player) do
-    Enum.find(players, fn p -> p.name == player.name and p.bid end) != nil
+  def has_bid_already?(%Game{players: players}, username) do
+    Enum.find(players, fn p -> p.name == username and p.bid end) != nil
   end
 
   @doc """
@@ -225,7 +242,7 @@ defmodule Toe.Games do
   """
   def get_game!(id), do: Repo.get!(Game, id)
 
-  defp get_game_by_slug(slug) do
+  def get_game_by_slug(slug) do
     Repo.get_by(Game, slug: slug)
     |> convert_json_to_game()
   end
@@ -250,7 +267,7 @@ defmodule Toe.Games do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_game(slug, players) do
+  def create_game(%Room{slug: slug}, players) do
     case get_game_by_slug(slug) do
       nil ->
         %Game{
@@ -263,7 +280,7 @@ defmodule Toe.Games do
           board: create_board()
         }
         |> Repo.insert()
-        |> broadcast(:game_updated, slug)
+        |> broadcast(:game_started, slug)
 
       game ->
         {:ok, game}
@@ -273,47 +290,18 @@ defmodule Toe.Games do
   defp create_board(_x \\ 3) do
     [
       # Row 1
-      Square.build(:sq11),
-      Square.build(:sq12),
-      Square.build(:sq13),
+      Square.build("sq11"),
+      Square.build("sq12"),
+      Square.build("sq13"),
       # Row 2
-      Square.build(:sq21),
-      Square.build(:sq22),
-      Square.build(:sq23),
+      Square.build("sq21"),
+      Square.build("sq22"),
+      Square.build("sq23"),
       # Row 3
-      Square.build(:sq31),
-      Square.build(:sq32),
-      Square.build(:sq33)
+      Square.build("sq31"),
+      Square.build("sq32"),
+      Square.build("sq33")
     ]
-  end
-
-  @doc """
-  Deletes a game.
-
-  ## Examples
-
-      iex> delete_game(game)
-      {:ok, %Game{}}
-
-      iex> delete_game(game)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_game(%Game{} = game) do
-    Repo.delete(game)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking game changes.
-
-  ## Examples
-
-      iex> change_game(game)
-      %Ecto.Changeset{data: %Game{}}
-
-  """
-  def change_game(%Game{} = game, attrs \\ %{}) do
-    Game.changeset(game, attrs)
   end
 
   def subscribe(slug) do
@@ -339,16 +327,12 @@ defmodule Toe.Games do
 
       [sq1, sq2, sq3] ->
         game
+        |> Map.merge(%{winning_squares: [sq1, sq2, sq3]})
         |> set_status("done")
         |> update_status_log("#{player.name} won the game!")
-        |> update_game(%{winning_squares: [sq1, sq2, sq3]})
     end
   end
 
-  @doc """
-  Check to see if the player won. Return a tuple of the winning squares if the they won. If no win found, returns `:not_found`.
-  Tests for all the different ways the player could win.
-  """
   defp _check_for_win(%Game{board: board}, %Player{letter: letter}) do
     case board do
       #
@@ -444,5 +428,123 @@ defmodule Toe.Games do
       _ ->
         if all_squares_taken?(board), do: :tie, else: :not_found
     end
+  end
+
+  @doc """
+  Creates a unique code.
+  """
+  def generate_room_code() do
+    # Generate a single 4 character random code
+    range = ?A..?Z
+
+    1..2
+    |> Enum.map(fn _ -> [Enum.random(range)] |> List.to_string() end)
+    |> Enum.join("")
+  end
+
+  @doc """
+  Returns the list of rooms.
+
+  ## Examples
+
+      iex> list_rooms()
+      [%Room{}, ...]
+
+  """
+  def list_rooms do
+    Repo.all(Room)
+  end
+
+  @doc """
+  Gets a single room via slug.
+
+  Raises `Ecto.NoResultsError` if the Room does not exist.
+
+  ## Examples
+
+      iex> get_room_slug!("123")
+      %Room{}
+
+      iex> get_room_slug!("456")
+      ** (Ecto.NoResultsError)
+  """
+  def get_room_slug!(slug), do: Repo.get_by!(Room, slug: slug)
+
+  def create_or_get_room_slug(slug) do
+    case Repo.get_by(Room, slug: slug) do
+      nil ->
+        {:ok, room} = create_room(slug)
+        room
+
+      room ->
+        room
+    end
+  end
+
+  @doc """
+  Creates a room.
+
+  ## Examples
+
+      iex> create_room(%{field: value})
+      {:ok, %Room{}}
+
+      iex> create_room(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_room(slug) do
+    slug = String.downcase(slug)
+
+    %Room{}
+    |> Room.changeset(%{slug: slug})
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a room.
+
+  ## Examples
+
+      iex> update_room(room, %{field: new_value})
+      {:ok, %Room{}}
+
+      iex> update_room(room, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_room(%Room{} = room, attrs) do
+    room
+    |> Room.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a room.
+
+  ## Examples
+
+      iex> delete_room(room)
+      {:ok, %Room{}}
+
+      iex> delete_room(room)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_room(%Room{} = room) do
+    Repo.delete(room)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking room changes.
+
+  ## Examples
+
+      iex> change_room(room)
+      %Ecto.Changeset{data: %Room{}}
+
+  """
+  def change_room(%Room{} = room, attrs \\ %{}) do
+    Room.changeset(room, attrs)
   end
 end

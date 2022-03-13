@@ -1,0 +1,14 @@
+  <div class="mt-4 p-4 rounded text-center">
+      <h5 class="block uppercase tracking-wide text-xs font-bold mb-2 text-white">
+          Change username
+      </h5>
+
+      <form id="set-username" phx-hook="SetUsername" phx-submit="save">
+          <input class="lowercase font-bold bg-transparent border-solid border-2 rounded py-3 px-4 mb-3 leading-tight"
+              type="text" name="username" id="username" placeholder="your username" autocomplete="off" autofocus />
+          <button type="submit"
+              class="inline-block ml-2 h-12 bg-yellow-500 hover:bg-yellow-600 tracking-wide text-white font-bold px-4 py-2 rounded uppercase">
+              Change</button>
+      </form>
+      you are <%= @username %>
+  </div>

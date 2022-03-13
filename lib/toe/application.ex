@@ -14,6 +14,7 @@ defmodule Toe.Application do
       ToeWeb.Telemetry,
       # Start the PubSub system
       {Phoenix.PubSub, name: Toe.PubSub},
+      ToeWeb.Presence,
       # Start the Endpoint (http/https)
       ToeWeb.Endpoint
       # Start a worker by calling: Toe.Worker.start_link(arg)

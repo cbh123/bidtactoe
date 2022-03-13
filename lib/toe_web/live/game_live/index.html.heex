@@ -1,56 +1,98 @@
 <div class="text-center">
-    <h5><%= if is_nil(@me), do: "SPECTATING", else:  "you are #{@me.name}" %> </h5>
 
+    <%= @username %>
 
-    <%= for {player, i} <- Enum.with_index(@game.players) do %>
-    <span class={if @game.player_turn==i, do: "underline" }>
-        <%= player.name %></span>
-    <span><%= player.letter %></span>
-    <%= player.points %>
+    <button phx-click="start">start</button>
 
+    <%# Enter a username %>
+    <%= if is_nil(@username)  do %>
+    <div class="mt-4 p-4 rounded text-center">
+        <h5 class="block uppercase tracking-wide text-xs font-bold mb-2 text-white">
+            To join the game, enter a username
+        </h5>
+
+        <form id="set-username" phx-hook="SetUsername" phx-submit="save">
+            <input class="lowercase font-bold bg-transparent border-solid border-2 rounded py-3 px-4 mb-3 leading-tight"
+                type="text" name="username" id="username" placeholder="your username" autocomplete="off" autofocus />
+            <button type="submit"
+                class="inline-block ml-2 h-12 bg-yellow-500 hover:bg-yellow-600 tracking-wide text-white font-bold px-4 py-2 rounded uppercase">
+                Join</button>
+        </form>
+    </div>
     <% end %>
 
-    <p><%= @game.status %></p>
-
-    <%# Board %>
-    <div class="m-5">
-        <%= for {square, i} <- Enum.with_index(@game.board) do %>
-        <%= if rem(i, 3) == 0 do %>
-        <br>
+    <%# Lobby  %>
+    <%= if is_nil(@game) do %>
+    <div class="bg-gray-700 rounded-lg mt-4 px-6 py-4 mx-auto max-w-sm phx-hook-subscribe-to-session">
+        <h2 class="font-bold underline mb-4">Lobby</h2>
+        <%= for username <- @connected_users |> Map.keys() do %>
+        <%= if !is_nil(@username) and username == @username do %>
+        <p>
+            (you)
+            <%= username %></p>
+        <% else %>
+        <p><%=username%></p>
         <% end %>
-
-        <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
-            do: "bg-blue-500" } #{if square.selected, do: "bg-yellow-500 animate-pulse" } hover:bg-gray-100 w-12 h-12
-            border-1 border p-5"}>
-            <%= square.letter %>
-
-            <%= if square.selected, do: "*" %>
-        </button>
         <% end %>
     </div>
+    <% end %>
 
 
-    <%# Bidding Area %>
-    <%= if @game.status == "bidding" do %>
-    <%= unless Games.has_bid_already?(@game, @me) do %>
+    <%# Game Arena %>
+    <%= unless is_nil(@game) do %>
+    <h5><%= if find_me(@game, @username), do: "you are #{@username}" , else: "SPECTATING"  %> </h5>
+
     <div>
+        <%= for {player, i} <- Enum.with_index(@game.players) do %>
+        <span class={if @game.player_turn==i, do: "underline" }>
+            <%= player.name %></span>
+        <span><%= player.letter %></span>
+        <%= player.points %>
 
-        <.form let={f} for={:bid} phx-change="validate" phx-submit="submit-bid">
-            <%= label f, :bid %>
-            <%= number_input f, :bid, required: true %>
-            <%= error_tag f, :bid %>
+        <% end %>
 
-            <%= submit "Submit Bid" %>
-        </.form>
+        <p><%= @game.status %></p>
 
+        <%# Board %>
+        <div class="m-5">
+            <%= for {square, i} <- Enum.with_index(@game.board) do %>
+            <%= if rem(i, 3) == 0 do %>
+            <br>
+            <% end %>
+
+            <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
+                do: "bg-blue-500" } #{if square.selected, do: "bg-yellow-500 animate-pulse" } hover:bg-gray-100 w-12
+                h-12 border-1 border p-5"}>
+                <%= square.letter %>
+
+                <%= if square.selected, do: "*" %>
+            </button>
+            <% end %>
+        </div>
+
+
+        <%# Bidding Area %>
+        <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
+        <%= unless Games.has_bid_already?(@game, @username) do %>
+        <div>
+
+            <.form let={f} for={:bid} phx-change="validate" phx-submit="submit-bid">
+                <%= label f, :bid %>
+                <%= number_input f, :bid, required: true, autocomplete: "off", class: "text-gray-800"  %>
+                <%= error_tag f, :bid %>
+
+                <%= submit "Submit Bid" %>
+            </.form>
+
+        </div>
+        <% end %>
+        <% end %>
+
+        <%= for log <- @game.status_log do %>
+        <p><%= log %></p>
+        <% end %>
+
+        <button phx-click="restart">Restart</button>
     </div>
     <% end %>
-    <% end %>
-
-    <%= for log <- @game.status_log do %>
-    <p><%= log %></p>
-    <% end %>
-
-    <button phx-click="restart">Restart</button>
-
 </div>
