@@ -39,4 +39,18 @@ defmodule Toe.GamesFixtures do
 
     room
   end
+
+  @doc """
+  Generate a log.
+  """
+  def log_fixture(attrs \\ %{}) do
+    {:ok, log} =
+      attrs
+      |> Enum.into(%{
+        status: "some status"
+      })
+      |> Toe.Games.create_log()
+
+    log
+  end
 end

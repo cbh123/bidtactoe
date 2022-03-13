@@ -9,7 +9,7 @@ defmodule Toe.Games.Game do
     field :players, {:array, :map}
     field :player_turn, :integer
     field :status_log, {:array, :string}
-    field :winning_squares, {:array, :map}
+    field :winning_squares, {:array, :string}
     field :board, {:array, :map}
 
     timestamps()
@@ -26,7 +26,8 @@ defmodule Toe.Games.Game do
       :status_log,
       :player_turn,
       :status,
-      :board
+      :board,
+      :winning_squares
     ])
     |> unique_constraint(:slug)
   end

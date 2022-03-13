@@ -107,20 +107,6 @@ defmodule ToeWeb.GameLive.Index do
     end
   end
 
-  def handle_event("validate", %{"bid" => %{"bid" => ""}}, socket) do
-    {:noreply, socket}
-  end
-
-  def handle_event("validate", %{"bid" => %{"bid" => bid}}, socket) when bid != "" do
-    player = find_me(socket.assigns.game, socket.assigns.username)
-
-    if String.to_integer(bid) > player do
-      {:noreply, socket |> put_flash(:error, "You don't have enough points!")}
-    else
-      {:noreply, socket}
-    end
-  end
-
   def handle_event("restart", _, socket) do
     Games.delete_game(socket.assigns.game)
     {:noreply, socket}

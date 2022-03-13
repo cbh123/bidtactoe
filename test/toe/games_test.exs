@@ -126,4 +126,58 @@ defmodule Toe.GamesTest do
       assert %Ecto.Changeset{} = Games.change_room(room)
     end
   end
+
+  describe "logs" do
+    alias Toe.Games.Log
+
+    import Toe.GamesFixtures
+
+    @invalid_attrs %{status: nil}
+
+    test "list_logs/0 returns all logs" do
+      log = log_fixture()
+      assert Games.list_logs() == [log]
+    end
+
+    test "get_log!/1 returns the log with given id" do
+      log = log_fixture()
+      assert Games.get_log!(log.id) == log
+    end
+
+    test "create_log/1 with valid data creates a log" do
+      valid_attrs = %{status: "some status"}
+
+      assert {:ok, %Log{} = log} = Games.create_log(valid_attrs)
+      assert log.status == "some status"
+    end
+
+    test "create_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Games.create_log(@invalid_attrs)
+    end
+
+    test "update_log/2 with valid data updates the log" do
+      log = log_fixture()
+      update_attrs = %{status: "some updated status"}
+
+      assert {:ok, %Log{} = log} = Games.update_log(log, update_attrs)
+      assert log.status == "some updated status"
+    end
+
+    test "update_log/2 with invalid data returns error changeset" do
+      log = log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Games.update_log(log, @invalid_attrs)
+      assert log == Games.get_log!(log.id)
+    end
+
+    test "delete_log/1 deletes the log" do
+      log = log_fixture()
+      assert {:ok, %Log{}} = Games.delete_log(log)
+      assert_raise Ecto.NoResultsError, fn -> Games.get_log!(log.id) end
+    end
+
+    test "change_log/1 returns a log changeset" do
+      log = log_fixture()
+      assert %Ecto.Changeset{} = Games.change_log(log)
+    end
+  end
 end

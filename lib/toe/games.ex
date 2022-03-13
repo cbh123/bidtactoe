@@ -5,8 +5,8 @@ defmodule Toe.Games do
 
   import Ecto.Query, warn: false
   alias Toe.Repo
-
   alias Toe.Games.{Game, Square, Player, Room}
+  alias Toe.Games.Log
 
   def game_over?(%Game{status: "done"}), do: true
   def game_over?(%Game{status: _}), do: false
@@ -85,7 +85,7 @@ defmodule Toe.Games do
   end
 
   defp check_bid_outcome(%Game{} = game) do
-    if all_players_bid?(game), do: bid_outcome(game), else: game
+    if all_players_bid?(game), do: bid_outcome(game), else: {:ok, game}
   end
 
   defp bid_outcome(%Game{} = game) do
@@ -99,6 +99,8 @@ defmodule Toe.Games do
       - if not:
         - change status to selecting
         - change all bids to nil
+
+    Returns {:ok, game} | {:info, message}
     """
 
     if any_ties?(game) do
@@ -206,12 +208,13 @@ defmodule Toe.Games do
   def can_square_be_selected?(%Square{selected: true}), do: false
 
   @doc """
-  Updates the status log with a new status.
+  Updates the status log with a new status. Also saves log to logs db.
 
   Returns a game.
   """
   def update_status_log(%Game{status_log: status_log} = game, new_status) do
     {:ok, game} = update_game(game, %{status_log: status_log ++ [new_status]})
+    {:ok, _status} = create_log(game, %{status: new_status})
     game
   end
 
@@ -327,10 +330,15 @@ defmodule Toe.Games do
         |> update_status_log("TIE GAME!")
 
       [sq1, sq2, sq3] ->
+        winning_squares_str = [sq1, sq2, sq3] |> Enum.map(&Atom.to_string(&1))
+
+        {:ok, game} =
+          game
+          |> set_status("done")
+          |> update_status_log("#{player.name} won the game!")
+          |> update_game(%{winning_squares: winning_squares_str})
+
         game
-        |> Map.merge(%{winning_squares: [sq1, sq2, sq3]})
-        |> set_status("done")
-        |> update_status_log("#{player.name} won the game!")
     end
   end
 
@@ -547,5 +555,23 @@ defmodule Toe.Games do
   """
   def change_room(%Room{} = room, attrs \\ %{}) do
     Room.changeset(room, attrs)
+  end
+
+  @doc """
+  Creates a log.
+
+  ## Examples
+
+      iex> create_log(%{field: value})
+      {:ok, %Log{}}
+
+      iex> create_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_log(%Game{slug: slug}, attrs \\ %{}) do
+    %Log{slug: slug}
+    |> Log.changeset(attrs)
+    |> Repo.insert()
   end
 end

@@ -76,7 +76,7 @@
         <%= unless Games.has_bid_already?(@game, @username) do %>
         <div>
 
-            <.form let={f} for={:bid} phx-change="validate" phx-submit="submit-bid">
+            <.form let={f} for={:bid} phx-submit="submit-bid">
                 <%= label f, :bid %>
                 <%= number_input f, :bid, required: true, autocomplete: "off", class: "text-gray-800"  %>
                 <%= error_tag f, :bid %>
