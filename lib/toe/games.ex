@@ -75,11 +75,12 @@ defmodule Toe.Games do
               else: p
           end)
 
-        game
-        |> update_status_log("#{name} bid: #{bid}")
-        |> update_game(%{players: players})
+        {:ok, game} =
+          game
+          |> update_status_log("#{name} bid: #{bid}")
+          |> update_game(%{players: players})
 
-        {:ok, check_bid_outcome(game)}
+        check_bid_outcome(game)
     end
   end
 

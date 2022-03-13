@@ -102,7 +102,7 @@ defmodule ToeWeb.GameLive.Index do
       {:error, message} ->
         {:noreply, socket |> put_flash(:error, message)}
 
-      {:ok, _game} ->
+      _game ->
         {:noreply, socket |> assign(bid: 0)}
     end
   end
