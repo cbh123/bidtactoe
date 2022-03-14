@@ -8,6 +8,23 @@ defmodule Toe.Games do
   alias Toe.Games.{Game, Square, Player, Room}
   alias Toe.Games.Log
 
+  @doc """
+  Takes a list of player names and converts them to a list of %Player{}'s
+
+  create_player_list(["bob", "charlie"])
+  > [%Player{name: "bob", letter: "X"}, %Player{name: "charlie", letter: "X"}]
+
+  """
+  def create_player_list(player_names) when is_list(player_names) do
+    flags = ["X", "O"]
+
+    player_names
+    |> Enum.with_index()
+    |> Enum.map(fn {name, i} ->
+      %Player{name: name, letter: Enum.at(flags, rem(i, 2))}
+    end)
+  end
+
   def game_over?(%Game{status: "done"}), do: true
   def game_over?(%Game{status: _}), do: false
 
@@ -60,35 +77,32 @@ defmodule Toe.Games do
 
   Returns {:ok, game} if valid, {:error, message} otherwise.
   """
-  def submit_bid(%Game{players: players} = game, %Player{points: points, name: name}, bid)
+  def submit_bid(
+        %Game{players: players} = game,
+        %Player{points: points, name: name} = player,
+        bid
+      )
       when points >= bid and is_number(bid) do
-    case has_bid_already?(game, name) do
+    game = update_player_bid(game, player, bid) |> update_status_log("#{name} bid: #{bid}")
+
+    cond do
+      all_players_bid?(game) and any_ties?(game) ->
+        game = game |> set_all_bids_to_nil()
+        {:error, "Tie, bid again"}
+
+      all_players_bid?(game) ->
+        resolve_bids(game, player, bid)
+
       true ->
-        {:error, "You've already bid!"}
-
-      _ ->
-        # update players
-        players =
-          Enum.map(players, fn p ->
-            if p.name == name,
-              do: %{p | bid: bid},
-              else: p
-          end)
-
-        {:ok, game} =
-          game
-          |> update_status_log("#{name} bid: #{bid}")
-          |> update_game(%{players: players})
-
-        check_bid_outcome(game)
+        {:ok, game}
     end
   end
 
-  defp check_bid_outcome(%Game{} = game) do
-    if all_players_bid?(game), do: bid_outcome(game), else: {:ok, game}
-  end
-
-  defp bid_outcome(%Game{} = game) do
+  defp resolve_bids(
+         %Game{players: players} = game,
+         %Player{points: points, name: name} = player,
+         bid
+       ) do
     """
     if there's a tie, reset bids to zero, status stays at bidding
     if someone won the bid:
@@ -100,33 +114,39 @@ defmodule Toe.Games do
         - change status to selecting
         - change all bids to nil
 
-    Returns {:ok, game} | {:info, message}
+    Returns {:ok, game}
     """
 
-    if any_ties?(game) do
-      game
-      |> set_all_bids_to_nil()
-      |> update_status_log("Bids are tied, bid again")
-    else
-      max_bid = Enum.max(Enum.map(game.players, fn p -> p.bid end))
-      bid_winner = Enum.find(game.players, fn p -> p.bid == max_bid end)
-      selected_square = get_selected_square(game)
+    max_bid = Enum.max(Enum.map(players, fn p -> p.bid end))
+    bid_winner = Enum.find(players, fn p -> p.bid == max_bid end)
+    selected_square = get_selected_square(game)
 
-      game
-      |> subtract_bids()
-      |> set_all_bids_to_nil()
-      |> set_selections_to_nil()
-      |> set_status("selecting")
-      |> set_square_letter(selected_square, bid_winner.letter)
-      |> update_status_log("#{bid_winner.name} wins the bid with #{max_bid}")
-      |> check_for_win(bid_winner)
-      |> next_turn()
-    end
+    game
+    |> subtract_bids()
+    |> set_all_bids_to_nil()
+    |> set_selections_to_nil()
+    |> set_status("selecting")
+    |> set_square_letter(selected_square, bid_winner.letter)
+    |> update_status_log("#{bid_winner.name} wins the bid with #{max_bid}")
+    |> check_for_win(bid_winner)
+    |> next_turn()
   end
 
   defp any_ties?(%Game{players: players}) do
     bids = Enum.map(players, fn p -> p.bid end)
     Enum.uniq(bids) != bids
+  end
+
+  defp update_player_bid(%Game{players: players} = game, %Player{name: name}, bid) do
+    players =
+      Enum.map(players, fn p ->
+        if p.name == name,
+          do: %{p | bid: bid},
+          else: p
+      end)
+
+    {:ok, game} = update_game(game, %{players: players})
+    game
   end
 
   defp set_all_bids_to_nil(%Game{players: players} = game) do

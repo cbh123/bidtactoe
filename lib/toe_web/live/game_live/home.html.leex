@@ -1,1 +1,4 @@
+<%= unless is_nil(@username) do %>
+<%= link "Settings", to: Routes.game_makeover_path(@socket, :makeover) %>
+<% end %>
 <button phx-click="start">Start</button>

@@ -12,11 +12,12 @@
 </head>
 
 <body class="bg-gray-800 text-blue-100">
-    <%= link "Home", to: Routes.game_home_path(@conn, :index) %>
-    <%= if not is_nil(Plug.Conn.get_session(@conn, :username)) do %>
-    <%= link "Change username", to: Routes.game_makeover_path(@conn, :makeover) %>
-    <% end %>
-    <%= @inner_content %>
+
+
+    <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 py-6">
+        <%= link "Home", to: Routes.game_home_path(@conn, :index) %>
+        <%= @inner_content %>
+    </div>
 </body>
 
 </html>

@@ -5,8 +5,8 @@ defmodule ToeWeb.GameLive.Home do
   use ToeWeb, :live_view
   alias Toe.Games
 
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(_params, session, socket) do
+    {:ok, socket |> assign(username: session["username"])}
   end
 
   def handle_event("start", _, socket) do

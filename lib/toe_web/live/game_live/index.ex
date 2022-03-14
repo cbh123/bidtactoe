@@ -6,6 +6,8 @@ defmodule ToeWeb.GameLive.Index do
   alias Toe.Games.Game
   alias Toe.Games.Player
 
+  @num_players 2
+
   @impl true
   def mount(%{"slug" => slug}, session, socket) do
     slug = String.downcase(slug)
@@ -32,21 +34,11 @@ defmodule ToeWeb.GameLive.Index do
     players =
       connected_users
       |> filter_connected_users()
-      |> create_player_list()
+      |> Games.create_player_list()
 
     slug
     |> Games.create_or_get_room_slug()
     |> Games.create_game(players)
-  end
-
-  defp create_player_list(player_names) when is_list(player_names) do
-    flags = ["X", "O"]
-
-    player_names
-    |> Enum.with_index()
-    |> Enum.map(fn {name, i} ->
-      %Player{name: name, letter: Enum.at(flags, rem(i, 2))}
-    end)
   end
 
   def handle_event("start", _, socket) do
@@ -102,7 +94,10 @@ defmodule ToeWeb.GameLive.Index do
       {:error, message} ->
         {:noreply, socket |> put_flash(:error, message)}
 
-      _game ->
+      {:ok, game} ->
+        Enum.slice(game.status_log, -1 * @num_players - 1, length(game.status_log))
+        |> IO.inspect(label: "log")
+
         {:noreply, socket |> assign(bid: 0)}
     end
   end
@@ -142,5 +137,18 @@ defmodule ToeWeb.GameLive.Index do
     connected_users
     |> Map.keys()
     |> Enum.filter(fn username -> username != "" and not is_nil(username) end)
+  end
+
+  defp status_message(game, username, my_username) do
+    blank = raw("&nbsp")
+
+    cond do
+      game.status == "done" -> blank
+      game.status == "bidding" and Games.has_bid_already?(game, username) -> blank
+      game.status == "bidding" -> "Place a bid"
+      username == my_username and Games.current_player_turn(game).name == username -> "Your turn"
+      username != my_username and Games.current_player_turn(game).name == username -> "Waiting..."
+      true -> raw("&nbsp")
+    end
   end
 end

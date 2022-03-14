@@ -1,11 +1,13 @@
+<div class="absolute top-6 right-4">
+    <%= if @game do %>
+    <button class="px-4 py-2 bg-blue-500 border-2 hover:bg-blue-400" phx-click="restart">Restart</button>
+    <% end %>
+</div>
+
 <div class="text-center">
 
-    <%= @username %>
-
-    <button phx-click="start">start</button>
-
     <%# Enter a username %>
-    <%= if is_nil(@username)  do %>
+    <%= if is_nil(@username) and is_nil(@game)  do %>
     <div class="mt-4 p-4 rounded text-center">
         <h5 class="block uppercase tracking-wide text-xs font-bold mb-2 text-white">
             To join the game, enter a username
@@ -35,23 +37,31 @@
         <% end %>
         <% end %>
     </div>
+    <button class="px-4 py-2 mt-4 bg-green-600 border-2 hover:bg-green-500" phx-click="start">Start</button>
     <% end %>
 
 
     <%# Game Arena %>
     <%= unless is_nil(@game) do %>
-    <h5><%= if find_me(@game, @username), do: "you are #{@username}" , else: "SPECTATING"  %> </h5>
+    <h5><%= if is_nil(find_me(@game, @username)), do: "SPECTATING" %> </h5>
 
     <div>
         <%= for {player, i} <- Enum.with_index(@game.players) do %>
-        <span class={if @game.player_turn==i, do: "underline" }>
-            <%= player.name %></span>
-        <span><%= player.letter %></span>
-        <%= player.points %>
+        <%# Player chips  %>
 
+        <%# Me %>
+        <div class="inline-block">
+            <p class="text-4xl my-2"><%= player.letter %></p>
+            <div class={"#{if @game.status=="selecting" and @game.player_turn==i, do: "bg-blue-800 animate-pulse" } px-6
+                py-2 border-yellow-400 border-2 inline-block"}>
+                <p><%= player.name %></p>
+                <p class="text-3xl font-bold"><%= player.points %></p>
+            </div>
+            <p class="text-xs"><%= status_message(@game, player.name, @username) %></p>
+
+        </div>
         <% end %>
 
-        <p><%= @game.status %></p>
 
         <%# Board %>
         <div class="m-5">
@@ -74,14 +84,14 @@
         <%# Bidding Area %>
         <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
         <%= unless Games.has_bid_already?(@game, @username) do %>
-        <div>
+        <div class="w-32 mx-auto text-center">
 
             <.form let={f} for={:bid} phx-submit="submit-bid">
-                <%= label f, :bid %>
-                <%= number_input f, :bid, required: true, autocomplete: "off", class: "text-gray-800"  %>
-                <%= error_tag f, :bid %>
+                <div>
+                    <%= number_input f, :bid, required: true, autocomplete: "off", placeholder: "ENTER BID", class: "px-4 py-2 text-gray-800 w-32 bg-gray-100"  %>
+                </div>
 
-                <%= submit "Submit Bid" %>
+                <%= submit "Submit Bid", class: "mt-4 inline-block py-2 px-4 bg-red-600 hover:bg-red-700 w-34" %>
             </.form>
 
         </div>
@@ -89,10 +99,11 @@
         <% end %>
 
         <%= for log <- @game.status_log do %>
+        <%= if log == "Bids are tied, bid again" do %>
         <p><%= log %></p>
         <% end %>
+        <% end %>
 
-        <button phx-click="restart">Restart</button>
     </div>
     <% end %>
 </div>
