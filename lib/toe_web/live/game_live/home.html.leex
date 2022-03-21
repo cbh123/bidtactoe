@@ -1,4 +1,28 @@
-<%= unless is_nil(@username) do %>
-<%= link "Settings", to: Routes.game_makeover_path(@socket, :makeover) %>
-<% end %>
-<button phx-click="start">Start</button>
+<div class="mt-6">
+    <h5 class="font-extrabold text-4xl text-yellow-500">Bid Tac Toe</h5>
+    <div class="mt-4 space-y-4 font-serif text-gray-700">
+        <p>The goal of Bid Tac Toe is the same as its namesake's: get three Xs or
+            Os
+            in a row. But there's a twist.
+        </p>
+        <p>Each player starts with 81 points. Every turn begins with one player selecting a square that will be up for
+            auction,
+            and the players then submit their bid.
+        </p>
+        <p> The bid amounts get subtracted from each player's points, even if you
+            lost. The winner gets to put their letter down in that square.</p>
+    </div>
+</div>
+
+
+
+<button class="px-4 py-2 mt-8 bg-yellow-400 font-extrabold rounded-lg text-yellow-50 hover:bg-green-500"
+    phx-click="start">Start Game
+    <span class="">&rarr;</span>
+</button>
+
+<div class="mt-12">
+    <%= unless is_nil(@username) do %>
+    <%= link "Settings", to: Routes.game_makeover_path(@socket, :makeover), class: "" %>
+    <% end %>
+</div>

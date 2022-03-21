@@ -29,7 +29,7 @@ Hooks.SetUsername = {
   // Called when a LiveView is mounted, if it includes an element that uses this hook.
   mounted() {
     this.handleEvent("set-username", ({ username }) => {
-      console.log("in the hook");
+      console.log("api called");
       // Ajax request to update session.
       fetch(`/api/session?username=${encodeURIComponent(username)}`, {
         method: "post",

@@ -6,7 +6,6 @@ defmodule ToeWeb.SessionController do
 
     conn
     |> put_session(:username, username)
-    |> IO.inspect(label: "put session")
     |> json("OK!")
   end
 end

@@ -9,13 +9,14 @@
     <%= live_title_tag assigns[:page_title] || "Bid Tac Toe" %>
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css" )} />
     <script defer phx-track-static type="text/javascript" src={Routes.static_path(@conn, "/assets/app.js" )}></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Just+Another+Hand&display=swap" rel="stylesheet">
 </head>
 
-<body class="bg-gray-800 text-blue-100">
-
-
-    <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 py-6">
-        <%= link "Home", to: Routes.game_home_path(@conn, :index) %>
+<body class="bg-yellow-50 text-yellow-500 font-draw text-4xl">
+    <div class="max-w-5xl mx-auto px-8 py-6">
         <%= @inner_content %>
     </div>
 </body>

@@ -8,7 +8,6 @@ defmodule ToeWeb.Router do
     plug :put_root_layout, {ToeWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_session
   end
 
   pipeline :api do
@@ -16,17 +15,17 @@ defmodule ToeWeb.Router do
     plug :fetch_session
   end
 
+  # Other scopes may use custom stacks.
+  scope "/api", ToeWeb do
+    pipe_through :api
+    post "/session", SessionController, :set
+  end
+
   scope "/", ToeWeb do
     pipe_through :browser
     live "/", GameLive.Home, :index
     live "/makeover", GameLive.Makeover, :makeover
     live "/play/:slug", GameLive.Index, :play
-  end
-
-  # Other scopes may use custom stacks.
-  scope "/api", ToeWeb do
-    pipe_through :api
-    post "/session", SessionController, :set
   end
 
   # Enables LiveDashboard only for development
