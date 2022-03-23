@@ -10,12 +10,14 @@
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css" )} />
     <script defer phx-track-static type="text/javascript" src={Routes.static_path(@conn, "/assets/app.js" )}></script>
 
+    <%# confetti  %>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Just+Another+Hand&display=swap" rel="stylesheet">
 </head>
 
-<body class="bg-yellow-50 text-yellow-500 font-draw text-4xl">
+<body class="bg-yellow-50 text-yellow-500 font-draw text-2xl sm:text-4xl">
     <div class="max-w-5xl mx-auto px-8 py-6">
         <%= @inner_content %>
     </div>

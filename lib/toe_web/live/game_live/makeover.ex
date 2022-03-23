@@ -9,6 +9,11 @@ defmodule ToeWeb.GameLive.Makeover do
   end
 
   def handle_event("save", %{"username" => username}, socket) do
+    username =
+      username
+      |> String.replace(~r/[^\w-]+/u, "")
+      |> String.downcase()
+
     {:noreply,
      socket
      |> push_event("set-username", %{username: username})

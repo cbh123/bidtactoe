@@ -52,6 +52,7 @@ defmodule Toe.Games do
     game
     |> update_status_log("#{Enum.at(game.players, game.player_turn).name} selected: #{name}")
     |> update_game(%{board: board, status: "bidding"})
+    |> broadcast(:game_updated, game.slug)
   end
 
   @doc """
@@ -83,18 +84,26 @@ defmodule Toe.Games do
         bid
       )
       when points >= bid and is_number(bid) do
-    game = update_player_bid(game, player, bid) |> update_status_log("#{name} bid: #{bid}")
+    [%Square{name: square_name}] = game.board |> Enum.filter(fn sq -> sq.selected end)
+
+    game =
+      update_player_bid(game, player, bid)
+      |> update_status_log("#{name} bid #{bid} on square #{square_name}")
 
     cond do
       all_players_bid?(game) and any_ties?(game) ->
-        game = game |> set_all_bids_to_nil()
-        {:error, "Tie, bid again"}
+        game =
+          game
+          |> set_all_bids_to_nil()
+          |> update_status_log("Bids are tied, bid again")
+
+        broadcast({:ok, game}, :game_updated, game.slug)
 
       all_players_bid?(game) ->
         resolve_bids(game, player, bid)
 
       true ->
-        {:ok, game}
+        {:ok, game} |> broadcast(:game_updated, game.slug)
     end
   end
 
@@ -130,6 +139,7 @@ defmodule Toe.Games do
     |> update_status_log("#{bid_winner.name} wins the bid with #{max_bid}")
     |> check_for_win(bid_winner)
     |> next_turn()
+    |> broadcast(:game_updated, game.slug)
   end
 
   defp any_ties?(%Game{players: players}) do
@@ -233,16 +243,18 @@ defmodule Toe.Games do
   Returns a game.
   """
   def update_status_log(%Game{status_log: status_log} = game, new_status) do
-    {:ok, game} = update_game(game, %{status_log: status_log ++ [new_status]})
+    {:ok, game} = update_game(game, %{status_log: [new_status] ++ status_log})
     {:ok, _status} = create_log(game, %{status: new_status})
     game
   end
 
+  @doc """
+  Updates a game
+  """
   def update_game(%Game{} = game, attrs \\ %{}) do
     game
     |> Game.changeset(attrs)
     |> Repo.update()
-    |> broadcast(:game_updated, game.slug)
   end
 
   def delete_game(%Game{} = game) do
@@ -357,6 +369,7 @@ defmodule Toe.Games do
           |> set_status("done")
           |> update_status_log("#{player.name} won the game!")
           |> update_game(%{winning_squares: winning_squares_str})
+          |> broadcast(:game_updated, game.slug)
 
         game
     end

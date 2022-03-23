@@ -7,7 +7,34 @@ module.exports = {
       draw: ["Just Another Hand", "cursive"],
       sans: ["ui-sans-serif", "system-ui"],
     },
-    extend: {},
+    extend: {
+      animation: {
+        fade: "fadeOut 3s ease",
+        alert: "quickFade 5s ease",
+      },
+      keyframes: (theme) => ({
+        fadeOut: {
+          "0%": {
+            opacity: 1,
+          },
+          "75%": {
+            transform: "translate(10px, 50px)",
+          },
+          "100%": {
+            opacity: 0,
+          },
+        },
+        quickFade: {
+          "0%": {
+            opacity: 1,
+          },
+
+          "100%": {
+            opacity: 0,
+          },
+        },
+      }),
+    },
   },
   plugins: [require("@tailwindcss/forms")],
 };

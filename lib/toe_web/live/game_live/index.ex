@@ -27,10 +27,13 @@ defmodule ToeWeb.GameLive.Index do
      |> assign(game: nil)
      |> assign(bid: 0)
      |> assign(slug: slug)
+     |> assign(bid_outcome: [])
+     |> assign(page_title: "Play Bid Tac Toe with me!")
      |> assign(game: Games.get_game_by_slug(slug))}
   end
 
-  def handle_params(params, url, socket) do
+  @impl true
+  def handle_params(_params, url, socket) do
     {:noreply, socket |> assign(url: url)}
   end
 
@@ -51,6 +54,11 @@ defmodule ToeWeb.GameLive.Index do
   end
 
   def handle_event("save", %{"username" => username}, socket) do
+    username =
+      username
+      |> String.replace(~r/[^\w-]+/u, "")
+      |> String.downcase()
+
     Presence.track(self(), "room:" <> socket.assigns.slug, username, %{})
 
     {:noreply,
@@ -95,12 +103,10 @@ defmodule ToeWeb.GameLive.Index do
 
     case Games.submit_bid(socket.assigns.game, player, bid) do
       {:error, message} ->
+        IO.inspect("ERROR! INCLUDING TIE!", label: "tie")
         {:noreply, socket |> put_flash(:error, message)}
 
-      {:ok, game} ->
-        Enum.slice(game.status_log, -1 * @num_players - 1, length(game.status_log))
-        |> IO.inspect(label: "log")
-
+      {:ok, _game} ->
         {:noreply, socket |> assign(bid: 0)}
     end
   end
@@ -123,7 +129,10 @@ defmodule ToeWeb.GameLive.Index do
 
   @impl true
   def handle_info({:game_updated, game}, socket) do
-    {:noreply, assign(socket, game: game) |> clear_flash()}
+    last_statuses = Enum.slice(game.status_log, 0, @num_players + 1)
+    bid_outcome = if bid_completed?(last_statuses), do: parse_bids(last_statuses), else: []
+
+    {:noreply, assign(socket, game: game, bid_outcome: bid_outcome) |> clear_flash()}
   end
 
   @impl true
@@ -161,10 +170,10 @@ defmodule ToeWeb.GameLive.Index do
         "place a bid" <> up_arrow1
 
       username == my_username and Games.current_player_turn(game).name == username ->
-        "your turn" <> up_arrow1
+        "select a square" <> up_arrow1
 
       username != my_username and Games.current_player_turn(game).name == username ->
-        "select a square" <> up_arrow1
+        "waiting..."
 
       true ->
         raw("&nbsp")
@@ -191,4 +200,36 @@ defmodule ToeWeb.GameLive.Index do
     </svg>
     """
   end
+
+  defp show_points(bid_outcome, username) do
+    [player] = Enum.filter(bid_outcome, fn b -> b.name == username end)
+    %{bid: player.bid, won: player.won}
+  end
+
+  defp bid_completed?([last_status_log, _status2, _status1]) do
+    String.contains?(last_status_log, "wins the bid")
+  end
+
+  defp bid_completed?(_), do: false
+
+  defp parse_bids([last, status2, status1]) do
+    status1 = status1 |> String.split()
+    status2 = status2 |> String.split()
+
+    name1 = status1 |> Enum.at(0)
+    bid1 = status1 |> Enum.at(-4)
+    name2 = status2 |> Enum.at(0)
+    bid2 = status2 |> Enum.at(-4)
+    winner = last |> String.split() |> Enum.at(0)
+
+    [
+      %{name: name1, bid: bid1, won: winner == name1},
+      %{name: name2, bid: bid2, won: winner == name2}
+    ]
+  end
+
+  defp parse_bids(_), do: []
+
+  defp last_bid_was_tie?(["Bids are tied, bid again" | _]), do: true
+  defp last_bid_was_tie?(_), do: false
 end

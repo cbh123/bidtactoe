@@ -44,6 +44,17 @@ Hooks.SetUsername = {
   },
 };
 
+Hooks.Confetti = {
+  mounted() {
+    confetti({
+      origin: { y: 0.0 },
+      spread: 150,
+      particleCount: 300,
+      gravity: 3,
+    });
+  },
+};
+
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");

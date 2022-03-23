@@ -4,7 +4,7 @@
 
 
 /* This file is for your main application CSS */
-.animate-fade {
+.animate-fade, .animate-alert {
     animation-fill-mode: forwards;
 }
 
