@@ -258,7 +258,7 @@
         <%# Bidding Area %>
         <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
         <%= unless Games.has_bid_already?(@game, @username) do %>
-        <div class="mt-12 mx-auto text-center">
+        <div id="submit-form" class="mt-12 mx-auto text-center" phx-hook="PlaySound">
 
             <%= if last_bid_was_tie?(@game.status_log) do %>
             <p class="my-6">Bid was tied, bid again!</p>
