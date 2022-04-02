@@ -7,6 +7,7 @@ defmodule ToeWeb.GameLive.Index do
   alias Toe.Games.Player
 
   @num_players 2
+  @player_colors ["blue", "teal", "orange", "red", "green"]
 
   @impl true
   def mount(%{"slug" => slug}, session, socket) do
@@ -85,7 +86,7 @@ defmodule ToeWeb.GameLive.Index do
       find_me(socket.assigns.game, socket.assigns.username) |> is_nil() ->
         {:noreply, socket |> put_flash(:info, "Spectators can't play! You fool.")}
 
-      Games.current_player_turn(socket.assigns.game).name != socket.assigns.username ->
+      Games.current_player_turn(socket.assigns.game) != socket.assigns.username ->
         {:noreply, socket |> put_flash(:error, "It's not your turn to select!")}
 
       not Games.can_square_be_selected?(square) ->
@@ -103,7 +104,6 @@ defmodule ToeWeb.GameLive.Index do
 
     case Games.submit_bid(socket.assigns.game, player, bid) do
       {:error, message} ->
-        IO.inspect("ERROR! INCLUDING TIE!", label: "tie")
         {:noreply, socket |> put_flash(:error, message)}
 
       {:ok, _game} ->
@@ -132,7 +132,9 @@ defmodule ToeWeb.GameLive.Index do
     last_statuses = Enum.slice(game.status_log, 0, @num_players + 1)
     bid_outcome = if bid_completed?(last_statuses), do: parse_bids(last_statuses), else: []
 
-    {:noreply, assign(socket, game: game, bid_outcome: bid_outcome) |> clear_flash()}
+    {:noreply,
+     assign(socket, game: game, bid_outcome: bid_outcome)
+     |> clear_flash()}
   end
 
   @impl true
@@ -164,15 +166,15 @@ defmodule ToeWeb.GameLive.Index do
         blank
 
       game.status == "bidding" and Games.has_bid_already?(game, username) ->
-        blank
+        "submitted"
 
       game.status == "bidding" ->
         "place a bid" <> up_arrow1
 
-      username == my_username and Games.current_player_turn(game).name == username ->
+      username == my_username and Games.current_player_turn(game) == username ->
         "select a square" <> up_arrow1
 
-      username != my_username and Games.current_player_turn(game).name == username ->
+      username != my_username and Games.current_player_turn(game) == username ->
         "waiting..."
 
       true ->
@@ -232,4 +234,11 @@ defmodule ToeWeb.GameLive.Index do
 
   defp last_bid_was_tie?(["Bids are tied, bid again" | _]), do: true
   defp last_bid_was_tie?(_), do: false
+
+  defp last_move_was_bid_win?([hd | _]), do: String.contains?(hd, "wins the bid")
+  defp last_move_was_bid_win?(_), do: false
+
+  defp get_player_color(index) do
+    "text-#{Enum.at(@player_colors, index)}-400"
+  end
 end

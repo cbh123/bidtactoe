@@ -2,7 +2,7 @@
     <p class="alert z-50 rounded-lg bg-amber-500 text-white fixed top-10 right-10" role="alert"
         phx-click="lv:clear-flash" phx-value-key="error"><%= live_flash(@flash, :error) %></p>
 
-    <p class="alert z-50 rounded-lg bg-teal-500 text-white fixed top-10 right-10" role="alert"
+    <p class="alert z-50 rounded-lg bg-teal-500 text-white fixed top-10 right-10 animate-slowfade" role="alert"
         phx-click="lv:clear-flash" phx-value-key="info"><%= live_flash(@flash, :info) %></p>
 
     <%= @inner_content %>

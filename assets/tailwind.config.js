@@ -4,13 +4,14 @@ module.exports = {
   content: ["./js/**/*.js", "../lib/*_web.ex", "../lib/*_web/**/*.*ex"],
   theme: {
     fontFamily: {
-      draw: ["Just Another Hand", "cursive"],
+      draw: ["Comic Neue", "cursive"],
       sans: ["ui-sans-serif", "system-ui"],
     },
     extend: {
       animation: {
         fade: "fadeOut 3s ease",
         alert: "quickFade 5s ease",
+        slowfade: "quickFade 7s ease",
       },
       keyframes: (theme) => ({
         fadeOut: {

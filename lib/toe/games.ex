@@ -219,10 +219,10 @@ defmodule Toe.Games do
   end
 
   @doc """
-  Get the player whose turn it is.
+  Get the player's name whose turn it is.
   """
   def current_player_turn(%Game{player_turn: player_turn, players: players}) do
-    Enum.at(players, player_turn)
+    Enum.at(players, player_turn).name
   end
 
   defp next_player_turn(%Game{player_turn: player_turn, players: players}) do
