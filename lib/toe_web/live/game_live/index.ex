@@ -107,7 +107,7 @@ defmodule ToeWeb.GameLive.Index do
         {:noreply, socket |> put_flash(:error, message)}
 
       {:ok, _game} ->
-        {:noreply, socket |> assign(bid: 0)}
+        {:noreply, socket |> assign(bid: 0) |> push_event("play-sound", {})}
     end
   end
 

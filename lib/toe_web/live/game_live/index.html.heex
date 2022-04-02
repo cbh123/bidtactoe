@@ -264,7 +264,7 @@
             <p class="my-6">Bid was tied, bid again!</p>
             <% end %>
 
-            <.form let={f} for={:bid} phx-submit="submit-bid">
+            <.form let={f} for={:bid} phx-submit="submit-bid" id="submit-bid">
                 <%= number_input f, :bid, required: true, autocomplete: "off", placeholder: "Bid", class:
                 "text-3xl w-28 h-16 px-4 inline-block focus:ring-amber-500 font-bold focus:border-amber-500 rounded-lg border-2 border-yellow-500 bg-yellow-50 text-gray-800"  %>
 
@@ -290,7 +290,7 @@
                     <p class="text-4xl sm:text-6xl font-bold"><%= player.points %></p>
                     <div class="px-6 inline-block" id="confetti">
                         <p><%= player.name %></p>
-                        <%= if @bid_outcome != [] do %>
+                        <%= if @bid_outcome != [] and length(@game.status_log) > 0 do %>
                         <p class="right-0 bottom-6 absolute rotate-12 animate-fade text-red-500">
                             -<span class=""><%= show_points(@bid_outcome, player.name).bid %></span>
                         </p>
