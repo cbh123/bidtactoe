@@ -143,8 +143,8 @@ defmodule Toe.Games do
   end
 
   defp any_ties?(%Game{players: players}) do
-    bids = Enum.map(players, fn p -> p.bid end)
-    Enum.uniq(bids) != bids
+    [bid1, bid2] = Enum.map(players, fn p -> p.bid end) |> Enum.sort(:desc) |> Enum.slice(0..1)
+    bid1 == bid2
   end
 
   defp update_player_bid(%Game{players: players} = game, %Player{name: name}, bid) do
