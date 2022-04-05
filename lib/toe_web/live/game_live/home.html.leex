@@ -20,9 +20,3 @@
 <button class="px-4 pt-4 pb-3 mt-8 bg-yellow-400 font-extrabold rounded-lg text-yellow-50 hover:bg-green-500"
     phx-click="start">Create a Game
 </button>
-
-<div class="mt-12">
-    <%= unless is_nil(@username) do %>
-    <%= link "Settings", to: Routes.game_makeover_path(@socket, :makeover), class: "" %>
-    <% end %>
-</div>
