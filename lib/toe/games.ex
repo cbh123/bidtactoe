@@ -8,6 +8,9 @@ defmodule Toe.Games do
   alias Toe.Games.{Game, Square, Player, Room}
   alias Toe.Games.Log
 
+  def flags(), do: ["X", "O", "&", "!", "#"]
+  def colors(), do: ["blue", "teal", "orange", "stone", "red"]
+
   @doc """
   Takes a list of player names and converts them to a list of %Player{}'s
 
@@ -16,12 +19,16 @@ defmodule Toe.Games do
 
   """
   def create_player_list(player_names) when is_list(player_names) do
-    flags = ["X", "O"]
+    flags = flags()
 
     player_names
     |> Enum.with_index()
     |> Enum.map(fn {name, i} ->
-      %Player{name: name, letter: Enum.at(flags, rem(i, 2))}
+      %Player{
+        name: name,
+        letter: Enum.at(flags, rem(i, length(player_names))),
+        color: Enum.at(colors, i)
+      }
     end)
   end
 
@@ -135,7 +142,7 @@ defmodule Toe.Games do
     |> set_all_bids_to_nil()
     |> set_selections_to_nil()
     |> set_status("selecting")
-    |> set_square_letter(selected_square, bid_winner.letter)
+    |> set_square_letter(selected_square, bid_winner)
     |> update_status_log("#{bid_winner.name} wins the bid with #{max_bid}")
     |> check_for_win(bid_winner)
     |> next_turn()
@@ -181,11 +188,14 @@ defmodule Toe.Games do
     game
   end
 
-  defp set_square_letter(%Game{board: board} = game, %Square{name: name}, letter) do
+  defp set_square_letter(%Game{board: board} = game, %Square{name: name}, %Player{
+         letter: letter,
+         color: color
+       }) do
     board =
       Enum.map(board, fn sq ->
         if sq.name == name,
-          do: %{sq | letter: letter},
+          do: %{sq | letter: letter, color: color},
           else: sq
       end)
 
@@ -363,6 +373,10 @@ defmodule Toe.Games do
 
       [sq1, sq2, sq3] ->
         winning_squares_str = [sq1, sq2, sq3] |> Enum.map(&Atom.to_string(&1))
+
+        room = get_room_slug!(game.slug)
+        new_scores = Map.update(room.scores, player.name, 1, &(&1 + 1))
+        {:ok, room} = update_room(room, %{scores: new_scores})
 
         {:ok, game} =
           game

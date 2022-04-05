@@ -1,4 +1,5 @@
 <nav class="flex justify-between">
+    <p class="hidden text-green-400 text-orange-400 text-stone-400 text-red-400 text-blue-400"></p>
     <%= link "BidTacToe", to: Routes.game_home_path(@socket, :index), class: "font-bold sm:text-4xl text-2xl" %>
 
 
@@ -52,13 +53,13 @@
         <% end %>
 
         <%# Players  %>
-        <div class="rounded-lg mt-4 px-6 py-8 bg-blue- mx-auto max-w-sm phx-hook-subscribe-to-session">
+        <div class="rounded-lg mt-4 px-6 py-8 bg-blue- mx-auto max-w-sm sm:max-w-full  phx-hook-subscribe-to-session">
             <h5 class="block uppercase tracking-wide text-lg font-bold mb-2 text-yellow-500">
                 players
             </h5>
             <div class="mt-6 grid grid-flow-col">
                 <%= for {username, i} <- get_named_connected_users(@connected_users) |> Enum.with_index()  do %>
-                <div class={"#{get_player_color(i)}"}>
+                <div class={"#{get_player_color_before_init(i)}"}>
                     <%= if username == @username do %>
                     <p class="-translate-x-6">you
                         <%= curvy_arrow(@socket) %>
@@ -66,23 +67,26 @@
                     <% else %>
                     &nbsp
                     <% end %>
-                    <p class="text-8xl font-extrabold"><%= if i == 0, do: "X", else: "O" %></p>
+                    <p class="text-8xl font-extrabold"><%= Enum.at(flags(), i) %></p>
                     <p class="font-extrabold"><%=username%></p>
+                    <p class="">
+                        <%=  if is_nil(@room.scores[username]), do: "0", else: @room.scores[username] %>
+                        <%= if @room.scores[username] == 1, do: "win", else: "wins" %>
+                    </p>
 
                 </div>
                 <% end %>
             </div>
-
             <%# Play Button  %>
             <div class="mt-16">
 
-                <%= if length(get_named_connected_users(@connected_users)) > 2 do %>
+                <%= if length(get_named_connected_users(@connected_users)) > 5 do %>
                 <div class="text-amber-600 inline-block px-4 py-2">
-                    FYI, only 2 players allowed... for now
+                    Max 5 players allowed! For now...
                 </div>
                 <% end %>
 
-                <%= if length(get_named_connected_users(@connected_users)) >= 2 do %>
+                <%= if 5 >= length(get_named_connected_users(@connected_users)) >= 2  do %>
                 <button
                     class="group px-6 py-4 bg-yellow-400 hover:italic font-extrabold rounded-lg text-white hover:bg-green-500 hover:text-white"
                     phx-click="start">
@@ -103,8 +107,6 @@
 
     <%# Game Arena %>
     <%= unless is_nil(@game) do %>
-
-
 
     <%= if @game.winning_squares != [] do %>
     <h1 class="text-6xl">GAME OVER!</h1>
@@ -135,7 +137,7 @@
                 do: "bg-yellow-300 animate-pulse" } #{if i==2 or i==5 or i==8, do: "border-l-4" } #{if rem(i, 3)==0,
                 do: "border-r-4" } #{if i <=5, do: "border-b-4" } #{if @game.status=="selecting" ,
                 do: "hover:bg-gray-100" } border-amber-500 sm:p-5 h-24"}>
-                <span class={"#{if square.letter=="X" , do: "text-blue-400" , else: "text-teal-400" }"}>
+                <span class={["#{parse_color(square.color)}"] }>
                     <%= square.letter %></span>
                 <span class="font-extrabold"><%= if square.selected, do: "?" %></span>
             </button>
@@ -163,21 +165,23 @@
         <% end %>
         <% end %>
 
-
-
         <%# Player chips  %>
-        <div class="mt-12 flex justify-evenly max-w-sm mx-auto">
+        <div class="mt-12 flex justify-evenly max-w-sm sm:max-w-full mx-auto overflow-scroll sm:overflow-hidden">
 
-            <%= for {player, i} <- Enum.with_index(@game.players) do %>
+            <%= for {player, _i} <- Enum.with_index(@game.players) do %>
             <div class="inline-block relative">
 
-                <div class={["p-4", get_player_color(i), (if Games.current_player_turn(@game)==player.name and
+                <div class={["p-4", get_player_color(player), (if Games.current_player_turn(@game)==player.name and
                     @game.status=="selecting" , do: "border-2 border-gray-400 rounded-lg" )]}>
 
-                    <p><%= player.letter %></p>
+                    <p><%= player.letter %>
+                    </p>
                     <p class="text-4xl sm:text-6xl font-bold"><%= player.points %></p>
-                    <div class="px-6 inline-block" id="confetti">
+                    <div class="px-2 inline-block" id="confetti">
                         <p><%= player.name %></p>
+                        <span
+                            class="text-base"> <%= unless is_nil(@room.scores[player.name]), do: Enum.map(1.. @room.scores[player.name], fn _i -> "🏆" end) %></span>
+
                         <%= if @bid_outcome != [] and length(@game.status_log) > 0 do %>
                         <p class="right-0 bottom-6 absolute rotate-12 animate-fade text-red-500">
                             -<span class=""><%= show_points(@bid_outcome, player.name).bid %></span>

@@ -6,9 +6,6 @@ defmodule ToeWeb.GameLive.Index do
   alias Toe.Games.Game
   alias Toe.Games.Player
 
-  @num_players 2
-  @player_colors ["blue", "teal", "orange", "red", "green"]
-
   @impl true
   def mount(%{"slug" => slug}, session, socket) do
     slug = String.downcase(slug)
@@ -28,6 +25,7 @@ defmodule ToeWeb.GameLive.Index do
      |> assign(game: nil)
      |> assign(bid: 0)
      |> assign(slug: slug)
+     |> assign(room: Games.get_room_slug!(slug))
      |> assign(bid_outcome: [])
      |> assign(page_title: "Play Bid Tac Toe with me!")
      |> assign(game: Games.get_game_by_slug(slug))}
@@ -129,9 +127,8 @@ defmodule ToeWeb.GameLive.Index do
 
   @impl true
   def handle_info({:game_updated, game}, socket) do
-    bid_outcome = if bid_completed?(game.status_log), do: parse_bids(game.status_log), else: []
-
-    bid_outcome |> IO.inspect(label: "bid outcome")
+    bid_outcome =
+      if bid_completed?(game.status_log), do: parse_bids(game.status_log, game), else: []
 
     {:noreply,
      assign(socket, game: game, bid_outcome: bid_outcome)
@@ -183,31 +180,6 @@ defmodule ToeWeb.GameLive.Index do
     end
   end
 
-  defp closeness_meter(bid_win, bid_second) do
-    diff = abs(bid_win - bid_second)
-
-    cond do
-      diff < 3 ->
-        ["Close call!", "Great bid", "Tricky!", "Narrow margins!", "Nice one!"] |> Enum.random()
-
-      diff < 8 ->
-        "Solid win."
-
-      diff < 12 ->
-        "Okaaay."
-
-      true ->
-        [
-          "Oof, that was expensive.",
-          "Not the closest bid.",
-          "Wowza!",
-          "Big margins",
-          "Wasted some points, but you got it."
-        ]
-        |> Enum.random()
-    end
-  end
-
   defp waiting_on_message(game) do
     waiting_on =
       game.players
@@ -226,9 +198,7 @@ defmodule ToeWeb.GameLive.Index do
       game.status == "selecting" and length(game.status_log) >= 3 ->
         [last_status | _] = game.status_log
 
-        [winner, second] = parse_bids(game.status_log) |> Enum.sort_by(& &1.bid, :desc)
-
-        "#{closeness_meter(winner.bid, second.bid)} #{String.capitalize(last_status)}! Now it's #{Games.current_player_turn(game)}'s turn to select a square."
+        "#{String.capitalize(last_status)}! Now it's #{Games.current_player_turn(game)}'s turn to select a square."
 
       game.status == "selecting" ->
         "Now it's #{Games.current_player_turn(game)}'s turn to select a square."
@@ -335,30 +305,31 @@ defmodule ToeWeb.GameLive.Index do
 
   defp bid_completed?(_), do: false
 
-  defp parse_bids([last, status2, status1 | _]) do
-    status1 = status1 |> String.split()
-    status2 = status2 |> String.split()
-
-    name1 = status1 |> Enum.at(0)
-    bid1 = status1 |> Enum.at(-4) |> String.to_integer()
-    name2 = status2 |> Enum.at(0)
-    bid2 = status2 |> Enum.at(-4) |> String.to_integer()
-    winner = last |> String.split() |> Enum.at(0)
-
-    [
-      %{name: name1, bid: bid1, won: winner == name1},
-      %{name: name2, bid: bid2, won: winner == name2}
-    ]
+  defp parse_bids_helper(status, winner) do
+    status = status |> String.split()
+    name = status |> Enum.at(0)
+    bid = status |> Enum.at(-4) |> String.to_integer()
+    %{name: name, bid: bid, won: winner == name}
   end
 
-  defp parse_bids(_), do: []
+  defp parse_bids([last | _] = status_log, game)
+       when length(status_log) >= length(game.players) + 1 do
+    winner = last |> String.split() |> Enum.at(0)
+
+    Enum.map(1..length(game.players), fn i ->
+      Enum.at(status_log, i) |> parse_bids_helper(winner)
+    end)
+  end
+
+  defp parse_bids(_, _), do: []
 
   defp last_bid_was_tie?(["Bids are tied, bid again" | _]), do: true
   defp last_bid_was_tie?(_), do: false
 
-  defp get_player_color(index) do
-    "text-#{Enum.at(@player_colors, index)}-400"
-  end
+  defp get_player_color(%Player{color: color}), do: parse_color(color)
+  defp parse_color(color), do: "text-#{color}-400"
+
+  defp get_player_color_before_init(i), do: Games.colors() |> Enum.at(i) |> parse_color()
 
   defp curvy_arrow(assigns) do
     ~H"""
@@ -413,4 +384,6 @@ defmodule ToeWeb.GameLive.Index do
     </svg>
     """
   end
+
+  def flags(), do: Games.flags()
 end

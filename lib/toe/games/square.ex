@@ -3,21 +3,21 @@ defmodule Toe.Games.Square do
   alias __MODULE__
 
   @derive Jason.Encoder
-  defstruct [:name, :letter, selected: false]
+  defstruct [:name, :letter, :color, selected: false]
 
   @doc """
   Build and returns a board square.
   Requires a name, ie
   """
-  def build(name, letter \\ nil) do
-    %Square{name: name, letter: letter, selected: false}
+  def build(name, letter \\ nil, color \\ nil) do
+    %Square{name: name, letter: letter, color: nil, selected: false}
   end
 
   @doc """
   Converts from JSON to Square.
   """
-  def convert(%{"letter" => letter, "name" => name, "selected" => selected}) do
-    %Square{name: name, letter: letter, selected: selected}
+  def convert(%{"letter" => letter, "name" => name, "selected" => selected, "color" => color}) do
+    %Square{name: name, letter: letter, selected: selected, color: color}
   end
 
   @doc """

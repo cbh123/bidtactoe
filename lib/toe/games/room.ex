@@ -4,14 +4,14 @@ defmodule Toe.Games.Room do
 
   schema "rooms" do
     field :slug, :string, unique: true
-
+    field :scores, :map, default: %{}
     timestamps()
   end
 
   @doc false
   def changeset(room, attrs) do
     room
-    |> cast(attrs, [:slug])
+    |> cast(attrs, [:slug, :scores])
     |> validate_required([:slug])
   end
 end
