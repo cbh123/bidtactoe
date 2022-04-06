@@ -36,7 +36,7 @@ Hooks.Share = {
     const shareData = {
       title: "Bid Tac Toe",
       text: "Play Bid Tac Toe with me!",
-      url: "https://bidtoe.fly.dev",
+      url: "https://bidtactoe.com",
     };
 
     this.el.addEventListener("click", async (e) => {
