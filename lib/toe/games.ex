@@ -119,11 +119,7 @@ defmodule Toe.Games do
     game =
       update_player_bid(game, player, bid)
       |> update_status_log("#{name} bid #{bid} on square #{square_name}")
-
-    # all computers now bid
-    [game | _] =
-      Enum.filter(game.players, fn p -> p.is_computer end)
-      |> Enum.map(fn p -> update_computer_bid(game, p, square_name) end)
+      |> handle_computer_players(square_name)
 
     cond do
       all_players_bid?(game) and any_ties?(game) ->
@@ -139,6 +135,17 @@ defmodule Toe.Games do
 
       true ->
         {:ok, game} |> broadcast(:game_updated, game.slug)
+    end
+  end
+
+  defp handle_computer_players(game, square_name) do
+    computer_players = Enum.filter(game.players, fn p -> p.is_computer end)
+
+    if length(computer_players) > 0 do
+      [game | _] =
+        computer_players |> Enum.map(fn p -> update_computer_bid(game, p, square_name) end)
+    else
+      game
     end
   end
 

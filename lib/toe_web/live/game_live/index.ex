@@ -64,6 +64,11 @@ defmodule ToeWeb.GameLive.Index do
      |> push_event("set-username", %{username: username})}
   end
 
+  def handle_event("restart", _, socket) do
+    Games.delete_game(socket.assigns.game)
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_event("updated_session_data", %{"username" => username}, socket) do
     {:noreply, assign(socket, username: username)}
