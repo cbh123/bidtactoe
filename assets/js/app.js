@@ -27,6 +27,22 @@ import topbar from "../vendor/topbar";
 import { Howl } from "howler";
 Hooks = {};
 
+Hooks.Share = {
+  mounted() {
+    const shareData = {
+      title: "Bid Tac Toe",
+      text: "Play Bid Tac Toe with me!",
+      url: "https://bidtoe.fly.dev",
+    };
+
+    this.el.addEventListener("click", async (e) => {
+      // Share must be triggered by "user activation"
+      try {
+        await navigator.share(shareData);
+      } catch (err) {}
+    });
+  },
+};
 Hooks.PlaySound = {
   mounted() {
     this.handleEvent("play-sound", ({}) => {

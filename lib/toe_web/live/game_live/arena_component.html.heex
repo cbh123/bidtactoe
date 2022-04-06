@@ -1,0 +1,109 @@
+<div id={@id} class="text-center">
+
+    <p class="alert z-50 rounded-lg bg-amber-500 text-white fixed top-10 right-10" role="alert"
+        phx-click="lv:clear-flash" phx-value-key="error"><%= live_flash(@parent_flash, :error) %></p>
+
+    <p class="alert z-50 rounded-lg bg-teal-500 text-white fixed top-10 right-10 animate-slowfade" role="alert"
+        phx-click="lv:clear-flash" phx-value-key="info"><%= live_flash(@parent_flash, :info) %></p>
+
+
+
+    <%# Game Arena %>
+    <%= unless is_nil(@game) do %>
+
+    <%= if @game.winning_squares != [] do %>
+    <h1 class="text-6xl">GAME OVER!</h1>
+    <%= @game.status_log |> Enum.at(0) %>
+    <div phx-hook="Confetti" class="mt-4">
+        <button class="group hover:bg-yellow-400 font-base px-4 py-2 text-2xl text-gray-800 rounded-lg tracking-wider"
+            phx-click="restart" phx-target={@myself}>rematch
+            <%= raw(spinny_thing()) %>
+        </button>
+    </div>
+    <% else %>
+    <%# Tooltip %>
+    <div class="bg-green-500 font-sans text-white max-w-sm mx-auto px-4 py-3 text-lg rounded-lg">
+        <h1><%= tooltip_message(@game, @username) %></h1>
+    </div>
+
+    <% end %>
+
+    <h5><%= if is_nil(find_me(@game, @username)), do: "SPECTATING" %> </h5>
+
+
+
+    <div>
+        <%# Board %>
+        <div class="mt-16 grid grid-cols-3 grid-rows-3 gap-0 max-w-xs mx-auto">
+            <%= for {square, i} <- Enum.with_index(@game.board) do %>
+            <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
+                do: "bg-yellow-300 animate-pulse" } #{if i==2 or i==5 or i==8, do: "border-l-4" } #{if rem(i, 3)==0,
+                do: "border-r-4" } #{if i <=5, do: "border-b-4" } #{if @game.status=="selecting" ,
+                do: "hover:bg-gray-100" } border-amber-500 sm:p-5 h-24"}>
+                <span class={["#{parse_color(square.color)}"] }>
+                    <%= square.letter %></span>
+                <span class="font-extrabold text-gray-800 animate-pulse"><%= if square.selected, do: "?" %></span>
+            </button>
+            <% end %>
+        </div>
+
+
+        <%# Bidding Area %>
+        <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
+        <%= unless Games.has_bid_already?(@game, @username) do %>
+        <div id="submit-form" class="mt-12 mx-auto text-center" phx-hook="PlaySound">
+
+            <%= if last_bid_was_tie?(@game.status_log) do %>
+            <p class="my-6">Bid was tied, bid again!</p>
+            <% end %>
+
+            <.form let={f} for={:bid} phx-submit="submit-bid" id="submit-bid">
+                <%= number_input f, :bid, required: true, autocomplete: "off", placeholder: "Bid", class:
+                "text-3xl w-28 h-16 px-4 inline-block focus:ring-amber-500 font-bold focus:border-amber-500 rounded-lg border-2 border-yellow-500 bg-yellow-50 text-gray-800"  %>
+
+                <%= submit "Submit", class: "text-3xl h-16 inline-block px-6 rounded-lg bg-amber-500 text-white hover:bg-red-700" %>
+            </.form>
+
+        </div>
+        <% end %>
+        <% end %>
+
+        <%# Player chips  %>
+        <div class="mt-12 flex justify-evenly max-w-sm sm:max-w-full mx-auto overflow-scroll sm:overflow-hidden">
+
+            <%= for {player, _i} <- Enum.with_index(@game.players) do %>
+            <div class="inline-block relative">
+
+                <div class={["p-4", get_player_color(player), (if Games.current_player_turn(@game)==player.name and
+                    @game.status=="selecting" , do: "border-2 border-gray-400 rounded-lg" )]}>
+
+                    <p><%= player.letter %>
+                    </p>
+                    <p class="text-4xl sm:text-6xl font-bold"><%= player.points %></p>
+                    <div class="px-2 inline-block" id="confetti">
+                        <p><%= if player.is_computer, do: "🤖" %> <%= player.name %></p>
+                        <%= unless is_nil(@room.scores[player.name]) do %>
+                        <span
+                            class="text-base"> <%= Enum.map(1.. @room.scores[player.name], fn _i -> "🏆" end) %></span>
+                        <% end %>
+
+                        <%= if @bid_outcome != [] and length(@game.status_log) > 0 do %>
+                        <p class="right-0 bottom-6 absolute rotate-12 animate-fade text-red-500">
+                            -<span class=""><%= show_points(@bid_outcome, player.name).bid %></span>
+                        </p>
+                        <% end %>
+
+                    </div>
+                </div>
+
+                <p class="mt-2 font-light text-gray-800 text-2xl animate-pulse">
+                    <%= raw(status_message(@game, player.name, @username)) %></p>
+            </div>
+            <% end %>
+        </div>
+
+
+
+    </div>
+    <% end %>
+</div>

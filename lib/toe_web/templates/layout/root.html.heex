@@ -10,6 +10,16 @@
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css" )} />
     <script defer phx-track-static type="text/javascript" src={Routes.static_path(@conn, "/assets/app.js" )}></script>
 
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❌</text></svg>" />
+
+    <meta property="og:title" content="Bid Tac Toe" />
+    <meta property="og:type" content="image" />
+    <meta property="og:url" content="bidtactoe.com" />
+    <meta property="og:description" content="Tic Tac Toe with a twist." />
+    <meta property="og:image" content="https://shlinked.s3.amazonaws.com/Screen+Shot+2022-04-05+at+1.35.28+PM.png" />
+
     <%# confetti  %>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.1/howler.min.js"></script>

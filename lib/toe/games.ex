@@ -27,7 +27,30 @@ defmodule Toe.Games do
       %Player{
         name: name,
         letter: Enum.at(flags, rem(i, length(player_names))),
-        color: Enum.at(colors, i)
+        color: Enum.at(colors(), i)
+      }
+    end)
+  end
+
+  @doc """
+  Takes a list of player names and converts them to a list of %Player{}'s
+
+  create_player_list(%{"bob" => %{is_computer: true}, "charlie" => %{is_computer: false}}])
+  > [%Player{name: "bob", letter: "X"}, %Player{name: "charlie", letter: "X"}]
+
+  """
+  def create_player_list_from_map(player_map) when is_map(player_map) do
+    flags = flags()
+    names = player_map |> Map.keys() |> Enum.sort() |> Enum.reverse()
+
+    names
+    |> Enum.with_index()
+    |> Enum.map(fn {name, i} ->
+      %Player{
+        name: name,
+        letter: Enum.at(flags, rem(i, length(player_map |> Map.keys()))),
+        color: Enum.at(colors(), i),
+        is_computer: player_map[name].is_computer
       }
     end)
   end
@@ -97,6 +120,11 @@ defmodule Toe.Games do
       update_player_bid(game, player, bid)
       |> update_status_log("#{name} bid #{bid} on square #{square_name}")
 
+    # all computers now bid
+    [game | _] =
+      Enum.filter(game.players, fn p -> p.is_computer end)
+      |> Enum.map(fn p -> update_computer_bid(game, p, square_name) end)
+
     cond do
       all_players_bid?(game) and any_ties?(game) ->
         game =
@@ -154,6 +182,32 @@ defmodule Toe.Games do
     bid1 == bid2
   end
 
+  defp update_computer_bid(
+         %Game{players: players} = game,
+         %Player{
+           name: name,
+           points: points,
+           is_computer: true,
+           computer_strategy: "random"
+         },
+         square_name
+       ) do
+    bid = Enum.random(0..points)
+
+    players =
+      Enum.map(players, fn p ->
+        if p.name == name,
+          do: %{p | bid: bid},
+          else: p
+      end)
+
+    {:ok, game} =
+      update_status_log(game, "#{name} bid #{bid} on square #{square_name}")
+      |> update_game(%{players: players})
+
+    game
+  end
+
   defp update_player_bid(%Game{players: players} = game, %Player{name: name}, bid) do
     players =
       Enum.map(players, fn p ->
@@ -179,7 +233,18 @@ defmodule Toe.Games do
   end
 
   defp next_turn(%Game{} = game) do
-    update_game(game, %{player_turn: next_player_turn(game)})
+    next_index = next_player_turn(game)
+    next_player = game.players |> Enum.at(next_index)
+
+    if next_player.is_computer do
+      # open_squares = Enum.filter(game.board, fn sq -> sq.selected == false end)
+      # choice = open_squares |> Enum.random() |> IO.inspect(label: "choice")
+      # {:ok, game} = declare_selected_square(game, choice)
+
+      update_game(game, %{player_turn: next_player_turn(game)})
+    else
+      update_game(game, %{player_turn: next_player_turn(game)})
+    end
   end
 
   defp set_status(%Game{} = game, status)
@@ -527,6 +592,8 @@ defmodule Toe.Games do
   def get_room_slug!(slug), do: Repo.get_by!(Room, slug: slug)
 
   def create_or_get_room_slug(slug) do
+    slug = String.downcase(slug)
+
     case Repo.get_by(Room, slug: slug) do
       nil ->
         {:ok, room} = create_room(slug)

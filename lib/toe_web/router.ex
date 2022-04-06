@@ -25,6 +25,7 @@ defmodule ToeWeb.Router do
     pipe_through :browser
     live "/", GameLive.Home, :index
     live "/makeover", GameLive.Makeover, :makeover
+    live "/lesson", GameLive.Lesson, :lesson
     live "/play/:slug", GameLive.Index, :play
   end
 
