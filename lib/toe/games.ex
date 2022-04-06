@@ -144,6 +144,8 @@ defmodule Toe.Games do
     if length(computer_players) > 0 do
       [game | _] =
         computer_players |> Enum.map(fn p -> update_computer_bid(game, p, square_name) end)
+
+      game
     else
       game
     end
