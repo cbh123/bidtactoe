@@ -20,6 +20,7 @@ defmodule ToeWeb.GameLive.Index do
     {:ok,
      socket
      |> assign(username: session["username"])
+     |> assign(page_title: "Play BidTacToe with me!")
      |> assign(connected_users: %{})
      |> assign(game: nil)
      |> assign(bid: 0)
