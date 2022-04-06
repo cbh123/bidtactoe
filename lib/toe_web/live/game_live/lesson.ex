@@ -101,7 +101,7 @@ defmodule ToeWeb.GameLive.Lesson do
       if bid_completed?(game.status_log), do: parse_bids(game.status_log, game), else: []
 
     if game.status == "selecting" and Enum.at(game.players, game.player_turn).is_computer do
-      open_squares = Enum.filter(game.board, fn sq -> sq.selected == false end)
+      open_squares = Enum.filter(game.board, fn sq -> is_nil(sq.letter) end)
       choice = open_squares |> Enum.random()
       Games.declare_selected_square(game, choice)
     end
