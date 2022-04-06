@@ -42,7 +42,10 @@
                 do: "hover:bg-gray-100" } border-amber-500 sm:p-5 h-24"}>
                 <span class={["#{parse_color(square.color)}"] }>
                     <%= square.letter %></span>
-                <span class="font-extrabold text-gray-800 animate-pulse"><%= if square.selected, do: "?" %></span>
+                <%= if square.selected do %>
+                <span
+                    class="font-extrabold text-gray-800 animate-pulse p-4 bg-yellow-400 rounded-full px-8 -ml-3">?</span>
+                <% end %>
             </button>
             <% end %>
         </div>
@@ -51,7 +54,7 @@
         <%# Bidding Area %>
         <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
         <%= unless Games.has_bid_already?(@game, @username) do %>
-        <div id="submit-form" class="mt-12 mx-auto text-center" phx-hook="PlaySound">
+        <div id="submit-form" class="mt-12 mx-auto text-center">
 
             <%= if last_bid_was_tie?(@game.status_log) do %>
             <p class="my-6">Bid was tied, bid again!</p>

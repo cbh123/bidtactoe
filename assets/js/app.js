@@ -25,7 +25,11 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 import { Howl } from "howler";
+import LiveReact, { initLiveReact } from "phoenix_live_react";
+
 Hooks = {};
+
+Hooks.LiveReact = LiveReact;
 
 Hooks.Share = {
   mounted() {
@@ -92,6 +96,10 @@ let csrfToken = document
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
   hooks: Hooks,
+});
+
+document.addEventListener("DOMContentLoaded", (e) => {
+  initLiveReact();
 });
 
 // Show progress bar on live navigation and form submits
