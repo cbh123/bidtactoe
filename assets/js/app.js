@@ -37,7 +37,7 @@ Hooks.Share = {
       // Share must be triggered by "user activation"
       try {
         await navigator.share({
-          title: "Bid Tac Toe",
+          title: "Play Bid Tac Toe with me!",
           text: "Play Bid Tac Toe with me!",
           url: e.target.innerHTML,
         });
