@@ -33,16 +33,14 @@ Hooks.LiveReact = LiveReact;
 
 Hooks.Share = {
   mounted() {
-    const shareData = {
-      title: "Bid Tac Toe",
-      text: "Play Bid Tac Toe with me!",
-      url: "https://bidtactoe.com",
-    };
-
     this.el.addEventListener("click", async (e) => {
       // Share must be triggered by "user activation"
       try {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: "Bid Tac Toe",
+          text: "Play Bid Tac Toe with me!",
+          url: e.target.innerHTML,
+        });
       } catch (err) {}
     });
   },

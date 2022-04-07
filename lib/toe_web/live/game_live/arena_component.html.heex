@@ -33,43 +33,7 @@
 
 
     <div>
-        <%# Board %>
-        <div class="mt-16 grid grid-cols-3 grid-rows-3 gap-0 max-w-xs mx-auto">
-            <%= for {square, i} <- Enum.with_index(@game.board) do %>
-            <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
-                do: "bg-yellow-300 animate-pulse" } #{if i==2 or i==5 or i==8, do: "border-l-4" } #{if rem(i, 3)==0,
-                do: "border-r-4" } #{if i <=5, do: "border-b-4" } #{if @game.status=="selecting" ,
-                do: "hover:bg-gray-100" } border-amber-500 sm:p-5 h-24"}>
-                <span class={["#{parse_color(square.color)}"] }>
-                    <%= square.letter %></span>
-                <%= if square.selected do %>
-                <span
-                    class="font-extrabold animate-pulse w-full p-3 px-6  bg-gradient-to-tr from-yellow-300 to-orange-400 text-white rounded-full">?</span>
-                <% end %>
-            </button>
-            <% end %>
-        </div>
 
-
-        <%# Bidding Area %>
-        <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
-        <%= unless Games.has_bid_already?(@game, @username) do %>
-        <div id="submit-form" class="mt-12 mx-auto text-center">
-
-            <%= if last_bid_was_tie?(@game.status_log) do %>
-            <p class="my-6">Bid was tied, bid again!</p>
-            <% end %>
-
-            <.form let={f} for={:bid} phx-submit="submit-bid" id="submit-bid">
-                <%= number_input f, :bid, required: true, autocomplete: "off", placeholder: "Bid", class:
-                "text-3xl w-28 h-16 px-4 inline-block focus:ring-amber-500 font-bold focus:border-amber-500 rounded-lg border-2 border-yellow-500 bg-yellow-50 text-gray-800"  %>
-
-                <%= submit "Submit", class: "text-3xl h-16 inline-block px-6 rounded-lg bg-amber-500 text-white hover:bg-red-700" %>
-            </.form>
-
-        </div>
-        <% end %>
-        <% end %>
 
         <%# Player chips  %>
         <div class="mt-12 flex justify-evenly max-w-sm sm:max-w-full mx-auto overflow-scroll sm:overflow-hidden">
@@ -104,6 +68,46 @@
             </div>
             <% end %>
         </div>
+
+        <%# Bidding Area %>
+        <%= if @game.status == "bidding" and not is_nil(find_me(@game, @username)) do %>
+        <%= unless Games.has_bid_already?(@game, @username) do %>
+        <div id="submit-form" class="mt-12 mx-auto text-center">
+
+            <%= if last_bid_was_tie?(@game.status_log) do %>
+            <p class="my-6">Bid was tied, bid again!</p>
+            <% end %>
+
+            <.form let={f} for={:bid} phx-submit="submit-bid" id="submit-bid">
+                <%= number_input f, :bid, required: true, autocomplete: "off", placeholder: "Bid", class:
+                "text-3xl w-28 h-16 px-4 inline-block focus:ring-amber-500 font-bold focus:border-amber-500 rounded-lg border-2 border-yellow-500 bg-yellow-50 text-gray-800"  %>
+
+                <%= submit "Submit", class: "text-3xl h-16 inline-block px-6 rounded-lg bg-amber-500 text-white hover:bg-red-700" %>
+            </.form>
+
+        </div>
+        <% end %>
+        <% end %>
+
+        <%# Board %>
+        <div class="mt-16 grid grid-cols-3 grid-rows-3 gap-0 max-w-xs mx-auto">
+            <%= for {square, i} <- Enum.with_index(@game.board) do %>
+            <button phx-value-name={square.name} phx-click="select" class={"#{if square.name in @game.winning_squares,
+                do: "bg-yellow-300 animate-pulse" } #{if i==2 or i==5 or i==8, do: "border-l-4" } #{if rem(i, 3)==0,
+                do: "border-r-4" } #{if i <=5, do: "border-b-4" } #{if @game.status=="selecting" ,
+                do: "hover:bg-gray-100" } border-amber-500 sm:p-5 h-24"}>
+                <span class={["#{parse_color(square.color)}"] }>
+                    <%= square.letter %></span>
+                <%= if square.selected do %>
+                <span
+                    class="font-extrabold animate-pulse w-full p-3 px-6  bg-gradient-to-tr from-yellow-300 to-orange-400 text-white rounded-full">?</span>
+                <% end %>
+            </button>
+            <% end %>
+        </div>
+
+
+
 
 
 
