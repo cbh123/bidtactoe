@@ -36,7 +36,7 @@
 
 
         <%# Player chips  %>
-        <div class="mt-12 flex justify-evenly max-w-sm sm:max-w-full mx-auto overflow-scroll sm:overflow-hidden">
+        <div class="mt-6 flex justify-evenly max-w-sm sm:max-w-full mx-auto overflow-scroll sm:overflow-hidden">
 
             <%= for {player, _i} <- Enum.with_index(@game.players) do %>
             <div class="inline-block relative">
@@ -48,7 +48,7 @@
                     </p>
                     <p class="text-4xl sm:text-6xl font-bold"><%= player.points %></p>
                     <div class="px-2 inline-block" id="confetti">
-                        <p><%= if player.is_computer, do: "🤖" %> <%= player.name %></p>
+                        <p class=""><%= if player.is_computer, do: "🤖" %> <%= player.name |> String.slice(0..10) %></p>
                         <%= unless is_nil(@room.scores[player.name]) do %>
                         <span
                             class="text-base"> <%= Enum.map(1.. @room.scores[player.name], fn _i -> "🏆" end) %></span>
