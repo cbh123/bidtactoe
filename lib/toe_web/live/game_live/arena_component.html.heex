@@ -48,7 +48,9 @@
                     </p>
                     <p class="text-4xl sm:text-6xl font-bold"><%= player.points %></p>
                     <div class="px-2 inline-block" id="confetti">
-                        <p class=""><%= if player.is_computer, do: "🤖" %> <%= player.name |> String.slice(0..10) %></p>
+                        <p class=""><%= if player.is_computer, do: "🤖" %>
+                            <%= player.name |> String.slice(0..10) %><%= if String.length(player.name) > 10, do: "..."%>
+                        </p>
                         <%= unless is_nil(@room.scores[player.name]) do %>
                         <span
                             class="text-base"> <%= Enum.map(1.. @room.scores[player.name], fn _i -> "🏆" end) %></span>
