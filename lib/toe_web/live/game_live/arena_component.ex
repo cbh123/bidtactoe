@@ -72,6 +72,9 @@ defmodule ToeWeb.GameLive.ArenaComponent do
         name = last |> String.split() |> Enum.at(0)
 
         "#{name |> String.capitalize()} selected a square. Now time to bid! The winner gets the square. #{waiting_on_message(game)}"
+
+      true ->
+        "Tie Game! Booooring."
     end
   end
 
@@ -88,7 +91,7 @@ defmodule ToeWeb.GameLive.ArenaComponent do
 
   defp up_arrow1() do
     """
-    <svg class="h-6 w-6 inline-block" viewBox="0 0 388.057 388.058">
+    <svg class="h-6 w-6 inline-block rotate-180" viewBox="0 0 388.057 388.058">
     <g>
     <path d="M313.231,364.922c-14.688-38.556-28.764-77.112-45.288-115.056c-11.016-25.704-23.256-60.589-43.452-82.009
     c16.524-3.06,31.824-7.344,46.513-15.3c3.672-1.836,4.896-6.732,2.447-10.404c-16.523-29.988-32.436-60.588-50.796-89.352
