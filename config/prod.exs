@@ -19,16 +19,12 @@ config :logger, level: :info
 # To get SSL working, you will need to add the `https` key
 # to the previous section and set your `:url` port to 443:
 #
-# config :toe, ToeWeb.Endpoint,
-#   ...,
-#   url: [host: ".com", port: 443],
-#   https: [
-#     ...,
-#     port: 443,
-#     cipher_suite: :strong,
-#     keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
-#     certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
-#   ]
+config :prompt, StoryWeb.Endpoint,
+  http: [port: {:system, "PORT"}],
+  url: [scheme: "https", host: "bidtactoe.com", port: 443],
+  force_ssl: [rewrite_on: [:x_forwarded_proto]],
+  cache_static_manifest: "priv/static/cache_manifest.json"
+
 #
 # The `cipher_suite` is set to `:strong` to support only the
 # latest and more secure SSL ciphers. This means old browsers
