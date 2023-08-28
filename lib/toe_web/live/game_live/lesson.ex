@@ -29,7 +29,10 @@ defmodule ToeWeb.GameLive.Lesson do
 
   defp start_game(slug, username) do
     players =
-      %{username => %{is_computer: false}, "BidTacTeacher" => %{is_computer: true}}
+      %{
+        username => %{is_computer: false},
+        "GPT-4" => %{is_computer: true, computer_strategy: "gpt"}
+      }
       |> Games.create_player_list_from_map()
 
     slug
@@ -97,9 +100,6 @@ defmodule ToeWeb.GameLive.Lesson do
 
   @impl true
   def handle_info({:game_updated, game}, socket) do
-    bid_outcome =
-      if bid_completed?(game.status_log), do: parse_bids(game.status_log, game), else: []
-
     if game.status == "selecting" and Enum.at(game.players, game.player_turn).is_computer do
       open_squares = Enum.filter(game.board, fn sq -> is_nil(sq.letter) end)
       choice = open_squares |> Enum.random()
@@ -107,7 +107,7 @@ defmodule ToeWeb.GameLive.Lesson do
     end
 
     {:noreply,
-     assign(socket, game: game, bid_outcome: bid_outcome)
+     assign(socket, game: game)
      |> clear_flash()}
   end
 
@@ -126,22 +126,6 @@ defmodule ToeWeb.GameLive.Lesson do
   end
 
   defp bid_completed?(_), do: false
-
-  defp parse_bids_helper(status, winner) do
-    status = status |> String.split()
-    name = status |> Enum.at(0)
-    bid = status |> Enum.at(-4) |> String.to_integer()
-    %{name: name, bid: bid, won: winner == name}
-  end
-
-  defp parse_bids([last | _] = status_log, game)
-       when length(status_log) >= length(game.players) + 1 do
-    winner = last |> String.split() |> Enum.at(0)
-
-    Enum.map(1..length(game.players), fn i ->
-      Enum.at(status_log, i) |> parse_bids_helper(winner)
-    end)
-  end
 
   defp parse_bids(_, _), do: []
 

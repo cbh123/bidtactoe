@@ -7,6 +7,7 @@ defmodule Toe.Games do
   alias Toe.Repo
   alias Toe.Games.{Game, Square, Player, Room}
   alias Toe.Games.Log
+  import Toe.AI
 
   def flags(), do: ["X", "O", "&", "!", "#"]
   def colors(), do: ["blue", "teal", "orange", "stone", "red"]
@@ -50,7 +51,8 @@ defmodule Toe.Games do
         name: name,
         letter: Enum.at(flags, rem(i, length(player_map |> Map.keys()))),
         color: Enum.at(colors(), i),
-        is_computer: player_map[name].is_computer
+        is_computer: player_map[name].is_computer,
+        computer_strategy: player_map[name] |> Map.get(:computer_strategy, "random")
       }
     end)
   end
@@ -212,6 +214,61 @@ defmodule Toe.Games do
 
     {:ok, game} =
       update_status_log(game, "#{name} bid #{bid} on square #{square_name}")
+      |> update_game(%{players: players})
+
+    game
+  end
+
+  defp update_computer_bid(
+         %Game{board: board, players: players} = game,
+         %Player{
+           name: name,
+           points: points,
+           is_computer: true,
+           computer_strategy: "gpt"
+         },
+         square_name
+       ) do
+    {:ok, result} =
+      ~x"""
+      model: gpt-4
+      system: you are a language model who serves as an AI for a bidding tic tac toe game. you always give your output in the format {bid};;{explanation}. The ;; is critical.
+      user: We're playing a game of bidding tic tac toe. Here's how it works.
+
+      Bid Tac Toe is Tic Tac Toe with a twist. You each start with 81 points.
+
+      Every turn begins with one player selecting a square that will be up for auction. Each player then submits a bid.
+
+      The winner gets to put their letter down in that square. You lose your bid, even if you don't win the auction. Once you get three in a row, you win.
+
+      Right now, you have #{points} points, and your opponent has #{players |> Enum.filter(&(!&1.is_computer)) |> List.first() |> Map.get(:points)} points. The square marked "selected: true" is up for bidding. How much do you want to bid? Make a guess.
+
+      This is the state of the board, in JSON form:
+
+      ## Board State
+      #{Jason.encode!(game.board)}
+
+      How much do you want to bid?
+      """
+      |> OpenAI.chat_completion()
+      |> parse_chat()
+      |> IO.inspect(label: "bid")
+
+    [bid, explanation] = result |> String.split(";;")
+    clean_bid = min(points, String.to_integer(bid))
+
+    players =
+      Enum.map(players, fn p ->
+        if p.name == name,
+          do: %{p | bid: clean_bid},
+          else: p
+      end)
+
+    {:ok, game} =
+      update_status_log(
+        game,
+        "#{name} bid #{bid} on square #{square_name}. Explanation: #{explanation}"
+      )
       |> update_game(%{players: players})
 
     game

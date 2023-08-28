@@ -29,6 +29,6 @@ defmodule Toe.Games.Game do
       :board,
       :winning_squares
     ])
-    |> unique_constraint(:slug)
+    |> unique_constraint(:slug, name: "unique_game_slug")
   end
 end

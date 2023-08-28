@@ -14,7 +14,7 @@
     <%= if @game.winning_squares != [] do %>
     <h1 class="text-6xl">GAME OVER!</h1>
     <%= @game.status_log |> Enum.at(0) %>
-    <div phx-hook="Confetti" class="mt-4">
+    <div id="confetti-arena" phx-hook="Confetti" class="mt-4">
         <button class="group hover:bg-yellow-400 font-base px-4 py-2 text-2xl text-gray-800 rounded-lg tracking-wider"
             phx-click="restart" phx-target={@myself}>rematch
             <%= raw(spinny_thing()) %>
@@ -47,7 +47,7 @@
                     <p><%= player.letter %>
                     </p>
                     <p class="text-4xl sm:text-6xl font-bold"><%= player.points %></p>
-                    <div class="px-2 inline-block" id="confetti">
+                    <div class="px-2 inline-block" id={"confetti-#{player.name}"}>
                         <p class=""><%= if player.is_computer, do: "🤖" %>
                             <%= player.name |> String.slice(0..10) %><%= if String.length(player.name) > 10, do: "..."%>
                         </p>
@@ -106,6 +106,17 @@
                 <% end %>
             </button>
             <% end %>
+        </div>
+
+        <div class="mt-12 max-w-sm mx-auto" :if={@lesson}>
+        <div class="h-64 overflow-scroll">
+        <h1 class="underline">Status Log</h1>
+        <ul class="text-left list-disc">
+        <%= for status <- @game.status_log do %>
+            <li class="text-lg"><%= status %></li>
+        <% end %>
+        </ul>
+        </div>
         </div>
 
 

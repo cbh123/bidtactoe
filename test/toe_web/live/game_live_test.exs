@@ -4,9 +4,39 @@ defmodule ToeWeb.GameLiveTest do
   import Phoenix.LiveViewTest
   import Toe.GamesFixtures
 
-  @create_attrs %{board: [], p: "some p", player1_points: "some player1_points", player2: "some player2", player2_points: "some player2_points", player_turn: "some player_turn", players1: "some players1", slug: "some slug", status: "some status"}
-  @update_attrs %{board: [], p: "some updated p", player1_points: "some updated player1_points", player2: "some updated player2", player2_points: "some updated player2_points", player_turn: "some updated player_turn", players1: "some updated players1", slug: "some updated slug", status: "some updated status"}
-  @invalid_attrs %{board: [], p: nil, player1_points: nil, player2: nil, player2_points: nil, player_turn: nil, players1: nil, slug: nil, status: nil}
+  @create_attrs %{
+    board: [],
+    p: "some p",
+    player1_points: "some player1_points",
+    player2: "some player2",
+    player2_points: "some player2_points",
+    player_turn: "some player_turn",
+    players1: "some players1",
+    slug: "some slug",
+    status: "some status"
+  }
+  @update_attrs %{
+    board: [],
+    p: "some updated p",
+    player1_points: "some updated player1_points",
+    player2: "some updated player2",
+    player2_points: "some updated player2_points",
+    player_turn: "some updated player_turn",
+    players1: "some updated players1",
+    slug: "some updated slug",
+    status: "some updated status"
+  }
+  @invalid_attrs %{
+    board: [],
+    p: nil,
+    player1_points: nil,
+    player2: nil,
+    player2_points: nil,
+    player_turn: nil,
+    players1: nil,
+    slug: nil,
+    status: nil
+  }
 
   defp create_game(_) do
     game = game_fixture()

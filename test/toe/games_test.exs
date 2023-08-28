@@ -8,7 +8,17 @@ defmodule Toe.GamesTest do
 
     import Toe.GamesFixtures
 
-    @invalid_attrs %{board: nil, p: nil, player1_points: nil, player2: nil, player2_points: nil, player_turn: nil, players1: nil, slug: nil, status: nil}
+    @invalid_attrs %{
+      board: nil,
+      p: nil,
+      player1_points: nil,
+      player2: nil,
+      player2_points: nil,
+      player_turn: nil,
+      players1: nil,
+      slug: nil,
+      status: nil
+    }
 
     test "list_game/0 returns all game" do
       game = game_fixture()
@@ -21,7 +31,17 @@ defmodule Toe.GamesTest do
     end
 
     test "create_game/1 with valid data creates a game" do
-      valid_attrs = %{board: [], p: "some p", player1_points: "some player1_points", player2: "some player2", player2_points: "some player2_points", player_turn: "some player_turn", players1: "some players1", slug: "some slug", status: "some status"}
+      valid_attrs = %{
+        board: [],
+        p: "some p",
+        player1_points: "some player1_points",
+        player2: "some player2",
+        player2_points: "some player2_points",
+        player_turn: "some player_turn",
+        players1: "some players1",
+        slug: "some slug",
+        status: "some status"
+      }
 
       assert {:ok, %Game{} = game} = Games.create_game(valid_attrs)
       assert game.board == []
@@ -41,7 +61,18 @@ defmodule Toe.GamesTest do
 
     test "update_game/2 with valid data updates the game" do
       game = game_fixture()
-      update_attrs = %{board: [], p: "some updated p", player1_points: "some updated player1_points", player2: "some updated player2", player2_points: "some updated player2_points", player_turn: "some updated player_turn", players1: "some updated players1", slug: "some updated slug", status: "some updated status"}
+
+      update_attrs = %{
+        board: [],
+        p: "some updated p",
+        player1_points: "some updated player1_points",
+        player2: "some updated player2",
+        player2_points: "some updated player2_points",
+        player_turn: "some updated player_turn",
+        players1: "some updated players1",
+        slug: "some updated slug",
+        status: "some updated status"
+      }
 
       assert {:ok, %Game{} = game} = Games.update_game(game, update_attrs)
       assert game.board == []

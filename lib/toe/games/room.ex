@@ -3,7 +3,7 @@ defmodule Toe.Games.Room do
   import Ecto.Changeset
 
   schema "rooms" do
-    field :slug, :string, unique: true
+    field :slug, :string
     field :scores, :map, default: %{}
     timestamps()
   end
