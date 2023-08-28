@@ -248,7 +248,7 @@ defmodule Toe.Games do
       ## Board State
       #{Jason.encode!(game.board)}
 
-      How much do you want to bid?
+      How much do you want to bid? Don't always do what you think is best. Sometimes, you have to bid exceptionally high or low to win. If you're too predictable, the human will just bid slightly more than you.
       """
       |> OpenAI.chat_completion()
       |> parse_chat()
