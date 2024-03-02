@@ -121,14 +121,6 @@ defmodule ToeWeb.GameLive.Lesson do
      |> push_redirect(to: Routes.game_lesson_path(socket, :lesson))}
   end
 
-  defp bid_completed?([last_status_log | _]) do
-    String.contains?(last_status_log, "wins the bid")
-  end
-
-  defp bid_completed?(_), do: false
-
-  defp parse_bids(_, _), do: []
-
   def find_me(%Game{players: players}, name) do
     Enum.find(players, fn p -> p.name == name end)
   end

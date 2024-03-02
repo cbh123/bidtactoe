@@ -92,7 +92,7 @@ defmodule Toe.Games do
 
   Returns {:error, message}
   """
-  def submit_bid(%Game{} = game, %Player{points: points}, bid)
+  def submit_bid(%Game{} = _game, %Player{points: points}, bid)
       when points < bid and is_number(bid),
       do: {:error, "You don't have enough points!"}
 
@@ -111,7 +111,7 @@ defmodule Toe.Games do
   Returns {:ok, game} if valid, {:error, message} otherwise.
   """
   def submit_bid(
-        %Game{players: players} = game,
+        %Game{players: _players} = game,
         %Player{points: points, name: name} = player,
         bid
       )
@@ -155,8 +155,8 @@ defmodule Toe.Games do
 
   defp resolve_bids(
          %Game{players: players} = game,
-         %Player{points: points, name: name} = player,
-         bid
+         %Player{points: _points, name: _name} = _player,
+         _bid
        ) do
     """
     if there's a tie, reset bids to zero, status stays at bidding
@@ -220,7 +220,7 @@ defmodule Toe.Games do
   end
 
   defp update_computer_bid(
-         %Game{board: board, players: players} = game,
+         %Game{board: _board, players: players} = game,
          %Player{
            name: name,
            points: points,
@@ -507,7 +507,7 @@ defmodule Toe.Games do
 
         room = get_room_slug!(game.slug)
         new_scores = Map.update(room.scores, player.name, 1, &(&1 + 1))
-        {:ok, room} = update_room(room, %{scores: new_scores})
+        {:ok, _room} = update_room(room, %{scores: new_scores})
 
         {:ok, game} =
           game

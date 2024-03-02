@@ -10,7 +10,7 @@ defmodule Toe.Games.Square do
   Requires a name, ie
   """
   def build(name, letter \\ nil, color \\ nil) do
-    %Square{name: name, letter: letter, color: nil, selected: false}
+    %Square{name: name, letter: letter, color: color, selected: false}
   end
 
   @doc """
