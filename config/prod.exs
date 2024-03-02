@@ -17,6 +17,7 @@ config :toe, StickerWeb.Endpoint,
   check_origin: [
     "https://bidtactoe.com",
     "https://www.bidtactoe.com",
+    "https://toe2.fly.dev"
   ]
 
 
