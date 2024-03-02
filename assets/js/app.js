@@ -24,12 +24,8 @@ import "phoenix_html";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
-import { Howl } from "howler";
-import LiveReact, { initLiveReact } from "phoenix_live_react";
 
 Hooks = {};
-
-Hooks.LiveReact = LiveReact;
 
 Hooks.Share = {
   mounted() {
@@ -45,19 +41,7 @@ Hooks.Share = {
     });
   },
 };
-Hooks.PlaySound = {
-  mounted() {
-    this.handleEvent("play-sound", ({}) => {
-      var sound = new Howl({
-        src: [
-          "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
-        ],
-        volume: 0.5,
-      });
-      sound.play();
-    });
-  },
-};
+
 Hooks.SetUsername = {
   // Called when a LiveView is mounted, if it includes an element that uses this hook.
   mounted() {

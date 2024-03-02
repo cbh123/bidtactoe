@@ -89,7 +89,7 @@ defmodule ToeWeb.GameLive.Lesson do
         {:noreply, socket |> put_flash(:error, message)}
 
       {:ok, _game} ->
-        {:noreply, socket |> assign(bid: 0) |> push_event("play-sound", %{})}
+        {:noreply, socket |> assign(bid: 0)}
     end
   end
 
