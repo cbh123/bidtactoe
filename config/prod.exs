@@ -12,7 +12,7 @@ import Config
 
 config :toe, StickerWeb.Endpoint,
   http: [port: {:system, "PORT"}],
-  url: [scheme: "https", host: "www.bidtactoe.com", port: 443],
+  url: [scheme: "https", host: "bidtactoe.com", port: 443],
   cache_static_manifest: "priv/static/cache_manifest.json",
   check_origin: [
     "https://bidtactoe.com",

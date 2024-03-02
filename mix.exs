@@ -51,7 +51,6 @@ defmodule Toe.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:tailwind, "~> 0.1", runtime: Mix.env() == :dev},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:phoenix_live_react, "~> 0.4"},
       {:openai, "~> 0.5.2"}
     ]
   end
