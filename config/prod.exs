@@ -14,12 +14,12 @@ config :toe, StickerWeb.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [scheme: "https", host: "bidtactoe.com", port: 443],
   cache_static_manifest: "priv/static/cache_manifest.json",
+  force_ssl: [rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]],
   check_origin: [
     "https://bidtactoe.com",
     "https://www.bidtactoe.com",
     "https://toe2.fly.dev"
   ]
-
 
 # Do not print debug messages in production
 config :logger, level: :info
