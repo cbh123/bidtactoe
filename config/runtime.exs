@@ -13,8 +13,7 @@ if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
 end
 
 config :openai,
-  api_key: System.fetch_env("OPENAI_API_KEY"),
-  organization_key: System.fetch_env("OPENAI_ORG"),
+  api_key: System.fetch_env!("OPENAI_API_KEY"),
   http_options: [recv_timeout: 60_000, timeout: 60_000]
 
 if config_env() == :prod do
