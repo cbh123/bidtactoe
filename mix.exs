@@ -51,7 +51,7 @@ defmodule Toe.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:tailwind, "~> 0.1", runtime: Mix.env() == :dev},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:openai, "~> 0.5.2"}
+      {:openai, "~> 0.6.1"}
     ]
   end
 
